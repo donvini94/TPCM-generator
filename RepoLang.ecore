@@ -6,7 +6,7 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType Ecore.ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="imports" upperBound="-1"
         eType="#//ImportedRepository" containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="types" eType="ecore:EClass platform:/resource/org.palladiosimulator.pcm/model/pcm.ecore#//repository/Repository"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="types" eType="ecore:EClass pcm.ecore#//repository/Repository"
         containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="elements" upperBound="-1"
         eType="#//NamedElement" containment="true"/>
@@ -28,7 +28,7 @@
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="SignatureParameter">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType Ecore.ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="type" eType="ecore:EClass platform:/resource/org.palladiosimulator.pcm/model/pcm.ecore#//repository/DataType"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="type" eType="ecore:EClass pcm.ecore#//repository/DataType"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Component" eSuperTypes="#//NamedElement">
     <eStructuralFeatures xsi:type="ecore:EReference" name="provides" upperBound="-1"
@@ -64,7 +64,7 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType Ecore.ecore#//EString"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="SeffInternalAction" eSuperTypes="#//SeffAction">
-    <eStructuralFeatures xsi:type="ecore:EReference" name="demandType" eType="ecore:EClass platform:/resource/org.palladiosimulator.pcm/model/pcm.ecore#//resourcetype/ProcessingResourceType"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="demandType" eType="ecore:EClass pcm.ecore#//resourcetype/ProcessingResourceType"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="demand" eType="ecore:EDataType Ecore.ecore#//EString"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="SeffAcquireAction" eSuperTypes="#//SeffAction">
@@ -112,7 +112,7 @@
         eType="#//SeffVariableChar" containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="SeffVariableChar">
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="characterisationType" eType="ecore:EEnum platform:/resource/org.palladiosimulator.pcm/model/pcm.ecore#//parameter/VariableCharacterisationType"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="characterisationType" eType="ecore:EEnum pcm.ecore#//parameter/VariableCharacterisationType"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="ecore:EDataType Ecore.ecore#//EString"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="SeffProbabilisticBranchAction" eSuperTypes="#//SeffAction">
