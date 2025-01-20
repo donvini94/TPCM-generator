@@ -1,55 +1,32 @@
 {
-  description = "A Nix-flake-based Python development environment";
+  description = "Python development environment with Poetry";
 
-  inputs.nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1.*.tar.gz";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs";
 
   outputs =
     { self, nixpkgs }:
-    let
-      supportedSystems = [
-        "x86_64-linux"
-        "aarch64-linux"
-        "x86_64-darwin"
-        "aarch64-darwin"
-      ];
-      forEachSupportedSystem =
-        f:
-        nixpkgs.lib.genAttrs supportedSystems (
-          system:
-          f {
-            pkgs = import nixpkgs { inherit system; };
-          }
-        );
-    in
     {
-      devShells = forEachSupportedSystem (
-        { pkgs }:
-        {
-          default = pkgs.mkShell {
-            venvDir = ".venv";
-            packages =
-              with pkgs;
-              [ python311 ]
-              ++ (with pkgs.python311Packages; [
-                pip
-                venvShellHook
-                requests
-                pandas
-                openpyxl
-              ]);
+      devShells = {
+        x86_64-linux.default =
+          let
+            pkgs = import nixpkgs { system = "x86_64-linux"; };
+          in
+          pkgs.mkShell {
+            buildInputs = [
+              pkgs.python311 # Your Python version
+              pkgs.poetry # Corrected Poetry package
+            ];
             shellHook = ''
-              if [ ! -d ".venv" ]; then
-                python -m venv .venv
-                source .venv/bin/activate
-                pip install --upgrade pip setuptools
-                pip install pyecore
-                echo "Virtual environment and dependencies installed."
-              elif [ -z "$VIRTUAL_ENV" ]; then
-                source .venv/bin/activate
+              # Ensure Poetry uses the virtual environment in the project folder
+              export POETRY_VIRTUALENVS_IN_PROJECT=true
+
+              # Initialize Poetry if not already done
+              if [ ! -f "pyproject.toml" ]; then
+                poetry init --no-interaction --name tcpm_generator
+                echo "Poetry project initialized with pyproject.toml"
               fi
             '';
           };
-        }
-      );
+      };
     };
 }
