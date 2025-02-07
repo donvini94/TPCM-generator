@@ -2,10 +2,10 @@ from pyecore.resources import ResourceSet, URI
 from pyecore.utils import DynamicEPackage
 
 rset = ResourceSet()
-resource = rset.get_resource(URI("RepoLang.ecore"))
-repo_lang_root = resource.contents[0]
+resource = rset.get_resource(URI("ecores/TPCM.ecore"))
+tpcm_root = resource.contents[0]
 
-DynamicRepoLang = DynamicEPackage(repo_lang_root)
+DynamicRepoLang = DynamicEPackage(tpcm_root)
 
 
 # Extract and display the metamodel structure
@@ -26,7 +26,7 @@ def explore_metamodel(package):
 
 
 # Traverse and print the metamodel structure
-metamodel_structure = explore_metamodel(repo_lang_root)
+metamodel_structure = explore_metamodel(tpcm_root)
 for cls in metamodel_structure:
     print(f"Class: {cls['class']}")
     for feature in cls["features"]:

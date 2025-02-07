@@ -13,8 +13,9 @@
           in
           pkgs.mkShell {
             buildInputs = [
-              pkgs.python311 # Your Python version
-              pkgs.poetry # Corrected Poetry package
+              pkgs.jdk17
+              pkgs.python311
+              pkgs.poetry
             ];
             shellHook = ''
               # Ensure Poetry uses the virtual environment in the project folder

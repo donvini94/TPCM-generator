@@ -1,44 +1,53 @@
-# Suppose that metamodel A.ecore has references to B.ecore as '../../B.ecore'.
-
-# Path of A.ecore is 'a/b/A.ecore' and B.ecore is '.'
-
 from pyecore.resources import ResourceSet, URI
+from pyecore.utils import DynamicEPackage
 
 rset = ResourceSet()
 
-resource = rset.get_resource(URI("Ecore.ecore"))  # Load B.ecore first
 
-root = resource.contents[0]
+tpcm_resource = rset.get_resource(URI("ecores/TPCM.ecore"))
+tpcm_metamodel = tpcm_resource.contents[0]
+rset.metamodel_registry[tpcm_metamodel.nsURI] = tpcm_metamodel
 
-rset.metamodel_registry["Ecore.ecore"] = (
-    root  # Register 'B' metamodel at 'file path' uri
-)
+# pcm_resource = rset.get_resource(URI("ecores/pcm.ecore"))
+# pcm_metamodel = pcm_resource.contents[0]
+# rset.metamodel_registry[pcm_metamodel.nsURI] = pcm_metamodel
+#
+# ecore_resource = rset.get_resource(URI("ecores/Ecore.ecore"))
+# ecore_metamodel = ecore_resource.contents[0]
+# rset.metamodel_registry[ecore_metamodel.nsURI] = ecore_metamodel
 
-resource = rset.get_resource(URI("pcm.ecore"))  # Load B.ecore first
 
-root = resource.contents[0]
+PCM = DynamicEPackage(tpcm_metamodel)
 
-rset.metamodel_registry["Ecore.ecore"] = (
-    root  # Register 'B' metamodel at 'file path' uri
-)
-resource = rset.get_resource(URI("RepoLang.ecore"))
+# model has fragments and imports
+model_instance = PCM.Model()
 
-mm_root = resource.contents[0]
-from pyecore.utils import DynamicEPackage
+std_definitions = PCM.Import()
+std_definitions.importURI = "std_definitions.tpcm"
+model_instance.imports += std_definitions
 
-MyMetamodel = DynamicEPackage(
-    mm_root
-)  # We create a DynamicEPackage for the loaded root
+resource_environment = PCM.Import()
+resource_environment.importURI = "ResourceEnvironment.tpcm"
+model_instance.imports += resource_environment
 
-a_instance = MyMetamodel.Repository()
+repository_instance = PCM.Repository()
+repository_instance.name = "MediaStore"
 
-b_instance = MyMetamodel.Component()
 
-b_instance.name = "vincenzo"
+datatype_instance = PCM.ComposedDatatype()
+datatype_instance.name = "FileContent"
+repository_instance.contents += datatype_instance
 
-a_instance.elements += b_instance
-model = rset.create_resource(URI("model.tpcm"))
 
-model.append(a_instance)
+component_instance = PCM.Component()
+component_instance.name = "C1"
+repository_instance.contents += component_instance
 
-model.save()
+
+model_instance.fragments += repository_instance
+
+model_resource = rset.create_resource(URI("model.xml"))
+model_resource.append(model_instance)
+model_resource.save()
+
+print("Model saved to model.xml")

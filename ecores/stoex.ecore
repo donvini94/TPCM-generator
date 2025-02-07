@@ -69,7 +69,7 @@
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="ProbabilityFunctionLiteral" eSuperTypes="#//Atom">
     <eStructuralFeatures xsi:type="ecore:EReference" name="function_ProbabilityFunctionLiteral"
-        ordered="false" lowerBound="1" eType="ecore:EClass ../../de.uka.ipd.sdq.probfunction/model/ProbabilityFunction.ecore#//ProbabilityFunction"
+        ordered="false" lowerBound="1" eType="ecore:EClass ProbabilityFunction.ecore#//ProbabilityFunction"
         containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Parenthesis" eSuperTypes="#//Atom">
