@@ -14,7 +14,7 @@
           pkgs.mkShell {
             buildInputs = [
               pkgs.jdk17
-              pkgs.python311
+              pkgs.python312
               pkgs.poetry
             ];
             shellHook = ''
