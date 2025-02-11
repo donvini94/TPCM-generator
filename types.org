@@ -1,0 +1,292 @@
+Class: Model
+  - Feature: imports, Type: EReference, EType: Import
+  - Feature: fragments, Type: EReference, EType: Fragment
+
+Class: Import
+  - Feature: namespace, Type: EAttribute, EType: EString
+  - Feature: importURI, Type: EAttribute, EType: EString
+
+Class: Fragment
+  - Feature: name, Type: EAttribute, EType: EString
+
+Class: Content
+
+Class: Datatype
+  - Feature: name, Type: EAttribute, EType: EString
+
+Class: PrimitiveDatatype
+  - Feature: type, Type: EAttribute, EType: PrimitiveTypeEnum
+
+Class: PrimitiveTypeEnum
+
+Class: ComposedDatatype
+  - Feature: elements, Type: EReference, EType: ComposedDatatypeElement
+
+Class: ComposedDatatypeElement
+  - Feature: name, Type: EAttribute, EType: EString
+  - Feature: reference, Type: EReference, EType: Datatype
+  - Feature: type, Type: EReference, EType: Datatype
+
+Class: CollectionDatatype
+  - Feature: collectionType, Type: EReference, EType: Datatype
+
+Class: Interface
+  - Feature: name, Type: EAttribute, EType: EString
+  - Feature: contents, Type: EReference, EType: InterfaceContent
+
+Class: InterfaceContent
+
+Class: Signature
+  - Feature: name, Type: EAttribute, EType: EString
+  - Feature: parameters, Type: EReference, EType: Parameter
+
+Class: Parameter
+  - Feature: name, Type: EAttribute, EType: EString
+  - Feature: type, Type: EReference, EType: Datatype
+
+Class: Component
+  - Feature: name, Type: EAttribute, EType: EString
+  - Feature: contents, Type: EReference, EType: Content
+
+Class: Role
+  - Feature: name, Type: EAttribute, EType: EString
+  - Feature: type, Type: EReference, EType: Interface
+
+Class: Initialization
+  - Feature: contents, Type: EReference, EType: PropertyInitializer
+
+Class: PropertyInitializer
+  - Feature: property, Type: EReference, EType: PropertyDefinition
+  - Feature: referencedElement, Type: EReference, EType: EObject
+  - Feature: specification, Type: EReference, EType: Expression
+
+Class: SEFF
+  - Feature: role, Type: EReference, EType: DomainInterfaceProvidedRole
+  - Feature: signatur, Type: EReference, EType: Signature
+  - Feature: contents, Type: EReference, EType: SEFFContent
+
+Class: SEFFContent
+
+Class: SEFFActionContainer
+
+Class: SEFFAssignmentOrCall
+  - Feature: result, Type: EReference, EType: ResultAssignment
+
+Class: SEFFAssignment
+  - Feature: specification, Type: EReference, EType: Expression
+
+Class: SEFFCallAction
+  - Feature: role, Type: EReference, EType: Role
+  - Feature: signature, Type: EReference, EType: Signature
+  - Feature: parameters, Type: EReference, EType: ParameterSpecification
+
+Class: ParameterSpecification
+  - Feature: reference, Type: EReference, EType: CharacteristicReference
+  - Feature: specification, Type: EReference, EType: Expression
+
+Class: ResultAssignment
+
+Class: ResultSpecification
+  - Feature: characteristic, Type: EReference, EType: CharacteristicReference
+  - Feature: specification, Type: EReference, EType: Expression
+
+Class: CharacteristicReference
+
+Class: SEFFLoopAction
+  - Feature: condition, Type: EReference, EType: Expression
+  - Feature: contents, Type: EReference, EType: SEFFContent
+
+Class: SEFFIterateAction
+  - Feature: iterable, Type: EReference, EType: Parameter
+  - Feature: contents, Type: EReference, EType: SEFFContent
+
+Class: SEFFConditionalAction
+  - Feature: condition, Type: EReference, EType: Expression
+  - Feature: contents, Type: EReference, EType: SEFFContent
+  - Feature: alternative, Type: EReference, EType: SEFFConditionalAlternative
+
+Class: SEFFConditionalAlternative
+  - Feature: contents, Type: EReference, EType: SEFFContent
+
+Class: SEFFConditionalElseIf
+  - Feature: condition, Type: EReference, EType: Expression
+  - Feature: alternative, Type: EReference, EType: SEFFConditionalAlternative
+
+Class: SEFFConditionalElse
+
+Class: SEFFProbabilisticAction
+  - Feature: branches, Type: EReference, EType: SEFFProbabilisticBranch
+
+Class: SEFFProbabilisticBranch
+  - Feature: probability, Type: EAttribute, EType: EDouble
+  - Feature: contents, Type: EReference, EType: SEFFContent
+
+Class: SEFFSetAction
+  - Feature: target, Type: EAttribute, EType: EString
+  - Feature: value, Type: EAttribute, EType: EString
+
+Class: FailureType
+  - Feature: name, Type: EAttribute, EType: EString
+
+Class: AssemblyContext
+  - Feature: name, Type: EAttribute, EType: EString
+  - Feature: component, Type: EReference, EType: Component
+
+Class: Connector
+  - Feature: name, Type: EAttribute, EType: EString
+  - Feature: from, Type: EReference, EType: AssemblyContext
+  - Feature: to, Type: EReference, EType: AssemblyContext
+  - Feature: requiringRole, Type: EReference, EType: InterfaceRequiredRole
+  - Feature: target, Type: EReference, EType: AssemblyContext
+
+Class: AllocationContext
+  - Feature: name, Type: EAttribute, EType: EString
+  - Feature: spec, Type: EReference, EType: AllocationSpecification
+
+Class: AllocationSpecification
+  - Feature: assemblies, Type: EReference, EType: AssemblyContext
+  - Feature: container, Type: EReference, EType: ResourceContainer
+
+Class: ResourceContainer
+  - Feature: contents, Type: EReference, EType: ResourceContainerContent
+
+Class: ResourceContainerContent
+  - Feature: name, Type: EAttribute, EType: EString
+
+Class: ProcessingResource
+  - Feature: type, Type: EReference, EType: ProcessingResourceType
+  - Feature: initialization, Type: EReference, EType: Initialization
+
+Class: LinkingResource
+  - Feature: name, Type: EAttribute, EType: EString
+  - Feature: type, Type: EReference, EType: CommunicationLinkType
+  - Feature: initialization, Type: EReference, EType: Initialization
+  - Feature: connected, Type: EReference, EType: ResourceContainer
+
+Class: ResourceInterface
+
+Class: InternalConfigurableInterface
+  - Feature: definitions, Type: EReference, EType: PropertyDefinition
+
+Class: ResourceType
+  - Feature: name, Type: EAttribute, EType: EString
+  - Feature: contents, Type: EReference, EType: ResourceTypeContent
+  - Feature: definitions, Type: EReference, EType: PropertyDefinition
+
+Class: PropertyDefinition
+  - Feature: optional, Type: EAttribute, EType: EBoolean
+  - Feature: name, Type: EAttribute, EType: EString
+  - Feature: type, Type: EReference, EType: EObject
+
+Class: ResourceTypeContent
+
+Class: ResourceFailureSpecification
+  - Feature: failureType, Type: EReference, EType: FailureType
+
+Class: ResourceInterfaceProvidedRole
+  - Feature: type, Type: EReference, EType: ResourceInterface
+  - Feature: interface, Type: EReference, EType: ResourceInterface
+
+Class: ResourceEntityType
+  - Feature: name, Type: EAttribute, EType: EString
+
+Class: ResourceEntity
+  - Feature: name, Type: EAttribute, EType: EString
+  - Feature: type, Type: EReference, EType: ResourceEntityType
+
+Class: UsageContent
+
+Class: UsageScenario
+  - Feature: name, Type: EAttribute, EType: EString
+  - Feature: workload, Type: EReference, EType: Workload
+  - Feature: contents, Type: EReference, EType: ScenarioContent
+
+Class: Workload
+
+Class: OpenWorkload
+  - Feature: interArrivalTime, Type: EReference, EType: Expression
+
+Class: ClosedWorkload
+  - Feature: numberOfUsers, Type: EAttribute, EType: EInt
+  - Feature: thinkTime, Type: EReference, EType: Expression
+
+Class: ScenarioContent
+
+Class: ScenarioLoopAction
+  - Feature: condition, Type: EReference, EType: Expression
+  - Feature: contents, Type: EReference, EType: ScenarioContent
+
+Class: ScenarioBranchAction
+  - Feature: branches, Type: EReference, EType: ScenarioBranch
+
+Class: ScenarioBranch
+  - Feature: probability, Type: EAttribute, EType: EDouble
+  - Feature: contents, Type: EReference, EType: ScenarioContent
+
+Class: EntryLevelSystemCallAction
+  - Feature: role, Type: EReference, EType: SystemProvidedRole
+  - Feature: signature, Type: EReference, EType: Signature
+  - Feature: parameters, Type: EReference, EType: ParameterSpecification
+  - Feature: result, Type: EReference, EType: ResultAssignment
+
+Class: ScenarioDelayAction
+  - Feature: duration, Type: EReference, EType: Expression
+
+Class: MappingContent
+  - Feature: imported, Type: EReference, EType: EObject
+  - Feature: absoluteUri, Type: EAttribute, EType: EString
+
+Class: Repository
+  - Feature: contents, Type: EReference, EType: Content
+
+Class: System
+  - Feature: contents, Type: EReference, EType: Content
+
+Class: Allocation
+  - Feature: contents, Type: EReference, EType: Content
+
+Class: ResourceEnvironment
+  - Feature: contents, Type: EReference, EType: Content
+
+Class: ResourceTypeRepository
+  - Feature: contents, Type: EReference, EType: Content
+
+Class: Usage
+  - Feature: contents, Type: EReference, EType: UsageContent
+
+Class: MappingConfiguration
+  - Feature: contents, Type: EReference, EType: MappingContent
+
+Class: DomainInterface
+
+Class: OperationSignature
+  - Feature: return, Type: EReference, EType: Datatype
+
+Class: EventSignature
+
+Class: DomainInterfaceProvidedRole
+
+Class: InterfaceRequiredRole
+
+Class: InternalInterfaceProvidedRole
+  - Feature: initialization, Type: EReference, EType: Initialization
+
+Class: ComplexResultAssignment
+  - Feature: specification, Type: EReference, EType: ResultSpecification
+
+Class: PrimitiveResultAssignment
+  - Feature: reference, Type: EReference, EType: CharacteristicReference
+
+Class: RelativeReference
+  - Feature: characteristic, Type: EReference, EType: AbstractNamedReference
+
+Class: AbsoluteReference
+  - Feature: reference, Type: EReference, EType: NamespaceReference
+
+Class: SystemProvidedRole
+  - Feature: to, Type: EReference, EType: AssemblyContext
+  - Feature: target, Type: EReference, EType: AssemblyContext
+
+Class: ProcessingResourceType
+
+Class: CommunicationLinkType
