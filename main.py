@@ -2,52 +2,45 @@ from pyecore.resources import ResourceSet, URI
 from pyecore.utils import DynamicEPackage
 
 rset = ResourceSet()
-
-
 tpcm_resource = rset.get_resource(URI("ecores/TPCM.ecore"))
 tpcm_metamodel = tpcm_resource.contents[0]
 rset.metamodel_registry[tpcm_metamodel.nsURI] = tpcm_metamodel
 
-# pcm_resource = rset.get_resource(URI("ecores/pcm.ecore"))
-# pcm_metamodel = pcm_resource.contents[0]
-# rset.metamodel_registry[pcm_metamodel.nsURI] = pcm_metamodel
-#
-# ecore_resource = rset.get_resource(URI("ecores/Ecore.ecore"))
-# ecore_metamodel = ecore_resource.contents[0]
-# rset.metamodel_registry[ecore_metamodel.nsURI] = ecore_metamodel
-
 
 PCM = DynamicEPackage(tpcm_metamodel)
 
-# model has fragments and imports
-model_instance = PCM.Model()
 
-std_definitions = PCM.Import()
-std_definitions.importURI = "std_definitions.tpcm"
-model_instance.imports += std_definitions
-
-resource_environment = PCM.Import()
-resource_environment.importURI = "ResourceEnvironment.tpcm"
-model_instance.imports += resource_environment
-
-repository_instance = PCM.Repository()
-repository_instance.name = "MediaStore"
+def add_std_definitions(model):
+    int_type = PCM.PrimitiveDatatype(name="Integer", type=PCM.PrimitiveTypeEnum.INT)
+    double_type = PCM.PrimitiveDatatype(
+        name="Double", type=PCM.PrimitiveTypeEnum.DOUBLE
+    )
+    primitive_type_repository = PCM.Repository(
+        name="PrimitiveTypes", contents=[int_type, double_type]
+    )
+    model.fragments.append(primitive_type_repository)
 
 
-datatype_instance = PCM.ComposedDatatype()
-datatype_instance.name = "FileContent"
-repository_instance.contents += datatype_instance
+repository = PCM.Repository(name="MediaStore")
 
 
-component_instance = PCM.Component()
-component_instance.name = "C1"
-repository_instance.contents += component_instance
+# int_collection = PCM.CollectionDatatype()
+# int_collection.name = "IntCollection"
+# int_collection.collectionType = type_1
+# repository.contents += int_collection
 
+# composed_data = PCM.ComposedDatatype()
+# composed_data.name = "AudioCollectionRequest"
+# composed_data.elements += PCM.ComposedDatatypeElement(name="Count", reference=type_1)
+# repository.contents.append(composed_data)
 
-model_instance.fragments += repository_instance
+model = PCM.Model()
+
+add_std_definitions(model)
+model.fragments += repository
 
 model_resource = rset.create_resource(URI("model.xml"))
-model_resource.append(model_instance)
+model_resource.append(model)
 model_resource.save()
 
 print("Model saved to model.xml")
