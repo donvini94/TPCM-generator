@@ -90,10 +90,6 @@
     <eStructuralFeatures xsi:type="ecore:EReference" name="result" eType="#//ResultAssignment"
         containment="true"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="SEFFAssignment" eSuperTypes="#//SEFFAssignmentOrCall">
-    <eStructuralFeatures xsi:type="ecore:EReference" name="specification" eType="ecore:EClass stoex.ecore#//Expression"
-        containment="true"/>
-  </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="SEFFCallAction" eSuperTypes="#//SEFFAssignmentOrCall">
     <eStructuralFeatures xsi:type="ecore:EReference" name="role" eType="#//Role"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="signature" eType="#//Signature"/>
@@ -114,45 +110,6 @@
         containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="CharacteristicReference"/>
-  <eClassifiers xsi:type="ecore:EClass" name="SEFFLoopAction" eSuperTypes="#//SEFFActionContainer">
-    <eStructuralFeatures xsi:type="ecore:EReference" name="condition" eType="ecore:EClass stoex.ecore#//Expression"
-        containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="contents" upperBound="-1"
-        eType="#//SEFFContent" containment="true"/>
-  </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="SEFFIterateAction" eSuperTypes="#//SEFFActionContainer">
-    <eStructuralFeatures xsi:type="ecore:EReference" name="iterable" eType="#//Parameter"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="contents" upperBound="-1"
-        eType="#//SEFFContent" containment="true"/>
-  </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="SEFFConditionalAction" eSuperTypes="#//SEFFActionContainer">
-    <eStructuralFeatures xsi:type="ecore:EReference" name="condition" eType="ecore:EClass stoex.ecore#//Expression"
-        containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="contents" upperBound="-1"
-        eType="#//SEFFContent" containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="alternative" eType="#//SEFFConditionalAlternative"
-        containment="true"/>
-  </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="SEFFConditionalAlternative">
-    <eStructuralFeatures xsi:type="ecore:EReference" name="contents" upperBound="-1"
-        eType="#//SEFFContent" containment="true"/>
-  </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="SEFFConditionalElseIf" eSuperTypes="#//SEFFConditionalAlternative">
-    <eStructuralFeatures xsi:type="ecore:EReference" name="condition" eType="ecore:EClass stoex.ecore#//Expression"
-        containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="alternative" eType="#//SEFFConditionalAlternative"
-        containment="true"/>
-  </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="SEFFConditionalElse" eSuperTypes="#//SEFFConditionalAlternative"/>
-  <eClassifiers xsi:type="ecore:EClass" name="SEFFProbabilisticAction" eSuperTypes="#//SEFFActionContainer">
-    <eStructuralFeatures xsi:type="ecore:EReference" name="branches" upperBound="-1"
-        eType="#//SEFFProbabilisticBranch" containment="true"/>
-  </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="SEFFProbabilisticBranch">
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="probability" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDouble"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="contents" upperBound="-1"
-        eType="#//SEFFContent" containment="true"/>
-  </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="SEFFSetAction" eSuperTypes="#//SEFFActionContainer">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="target" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
