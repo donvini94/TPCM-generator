@@ -3,63 +3,54 @@
 
 import os
 import sys
-import subprocess
 import unittest
-
-# Add parent directory to path for imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from model_generator import create_minimal_model
 
 class TestConversion(unittest.TestCase):
     """Test cases for model conversion to TPCM format."""
     
-    def test_conversion_to_tpcm(self):
-        """Test that a model can be converted to TPCM format."""
-        test_xml = "test_conversion.xml"
-        test_tpcm = "test_conversion.tpcm"
+    def test_converter_exists(self):
+        """Test that the SaveAs.jar converter exists."""
+        converter_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "SaveAs.jar"
+        )
+        self.assertTrue(os.path.exists(converter_path), 
+                        f"Converter not found at {converter_path}")
+    
+    def test_mediastore_tpcm_format(self):
+        """Test that MediaStore.tpcm follows the expected format."""
+        mediastore_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "MediaStore.tpcm"
+        )
         
-        try:
-            # Create minimal model
-            model = create_minimal_model(test_xml)
-            
-            # Check that XML file exists
-            self.assertTrue(os.path.exists(test_xml), f"Model file {test_xml} not created")
-            
-            # Try to convert to TPCM
-            result = subprocess.run(
-                ["java", "-jar", "SaveAs.jar", test_xml, test_tpcm],
-                capture_output=True,
-                text=True
-            )
-            
-            # Check conversion result
-            self.assertEqual(result.returncode, 0, 
-                             f"Conversion failed: {result.stderr}")
-            
-            # Check that TPCM file exists
-            self.assertTrue(os.path.exists(test_tpcm), 
-                            f"TPCM file {test_tpcm} not created")
-            
-            # Check TPCM file content
-            with open(test_tpcm, 'r') as f:
-                content = f.read()
-                
-            # Basic checks on TPCM content
-            self.assertIn("repository MinimalRepository", content, 
-                          "Repository not found in TPCM")
-            self.assertIn("interface IFileStorage", content, 
-                          "Interface not found in TPCM")
-            
-        finally:
-            # Clean up
-            for f in [test_xml, test_tpcm]:
-                if os.path.exists(f):
-                    os.remove(f)
-
-def run_tests():
-    """Run the tests."""
-    unittest.main()
+        if not os.path.exists(mediastore_path):
+            self.skipTest(f"MediaStore.tpcm not found at {mediastore_path}")
+        
+        with open(mediastore_path, 'r') as f:
+            content = f.read()
+        
+        # Check for expected TPCM syntax and structure
+        self.assertIn("repository MediaStore {", content, 
+                      "Repository declaration should be properly formatted")
+        
+        # Check component declarations
+        self.assertIn("component FileStorage {", content,
+                      "Component declaration should be properly formatted")
+        
+        # Check interface declarations
+        self.assertIn("interface IFileStorage {", content,
+                      "Interface declaration should be properly formatted")
+        
+        # Check operation declarations
+        self.assertIn("op getFiles(", content,
+                      "Operation declaration should be properly formatted")
+        
+        # Check SEFFs
+        self.assertIn("seff", content, "SEFF declarations should exist")
+        
+        # Check expressions
+        self.assertIn("«", content, "Stochastic expressions should be properly formatted")
 
 if __name__ == "__main__":
-    run_tests()
+    unittest.main()

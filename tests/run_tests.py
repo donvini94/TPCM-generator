@@ -8,17 +8,11 @@ import os
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tests.test_model_generator import TestModelGenerator
-from tests.test_conversion import TestConversion
-
 def run_all_tests():
     """Run all test cases."""
-    # Create test suite
-    test_suite = unittest.TestSuite()
-    
-    # Add test cases
-    test_suite.addTest(unittest.makeSuite(TestModelGenerator))
-    test_suite.addTest(unittest.makeSuite(TestConversion))
+    # Discover all tests in the tests directory
+    test_dir = os.path.dirname(os.path.abspath(__file__))
+    test_suite = unittest.defaultTestLoader.discover(test_dir, pattern="test_*.py")
     
     # Run tests
     runner = unittest.TextTestRunner(verbosity=2)

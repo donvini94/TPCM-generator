@@ -255,6 +255,36 @@ class ExpressionFactory:
         expr.ifExpression = if_expr
         expr.elseExpression = else_expr
         return expr
+        
+    def create_parameterized_expression(self, expression_string):
+        """Create a RandomVariable with a stoex expression string.
+        
+        This represents a stochastic expression or a parameterized expression.
+        
+        Args:
+            expression_string: String representation of the expression
+            
+        Returns:
+            A RandomVariable with the specified expression string
+        """
+        # Create a RandomVariable to hold the string specification directly
+        random_var = self.stoex.RandomVariable()
+        random_var.specification = expression_string
+        return random_var
+        
+    def create_pdf(self, points):
+        """Create a probability density function expression.
+        
+        Args:
+            points: List of (value, probability) tuples
+            
+        Returns:
+            A RandomVariable with PDF specification
+        """
+        # Format: DoublePDF[(value1;prob1)(value2;prob2)...]
+        points_str = "".join([f"({value};{prob})" for value, prob in points])
+        pdf_spec = f"DoublePDF[{points_str}]"
+        return self.create_parameterized_expression(pdf_spec)
     
     # === Probability Functions ===
     

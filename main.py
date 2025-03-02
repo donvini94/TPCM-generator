@@ -10,7 +10,7 @@ import subprocess
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import from our modules
-from model_generator import ModelGenerator, create_minimal_model
+from model_generator import ModelGenerator, create_minimal_model, create_mediastore_model
 
 
 def convert_to_tpcm(xml_path, tpcm_path):
@@ -84,16 +84,25 @@ def main():
         action="store_true",
         help="Generate a minimal working model instead of a random one"
     )
+    parser.add_argument(
+        "--mediastore", "-ms",
+        action="store_true",
+        help="Generate a MediaStore model based on MediaStore.tpcm"
+    )
     
     args = parser.parse_args()
     
     output_file = f"{args.output}.xml"
     
-    # Choose between minimal and random model generation
+    # Choose between minimal, mediastore, and random model generation
     if args.minimal:
         print("Generating minimal working model...")
         model = create_minimal_model(output_file)
         print(f"Minimal model generated and saved to {output_file}")
+    elif args.mediastore:
+        print("Generating MediaStore model...")
+        model = create_mediastore_model(output_file)
+        print(f"MediaStore model generated and saved to {output_file}")
     else:
         # Create model generator for random generation
         print(f"Generating random model with {args.interfaces} interfaces, {args.components} components, {args.containers} containers...")

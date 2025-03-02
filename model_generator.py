@@ -542,63 +542,361 @@ def create_minimal_model(output_file="minimal_model.xml"):
     return model
 
 
-def main():
-    """Main function to generate models."""
-    import argparse
+def create_mediastore_model(output_file="mediastore_model.xml"):
+    """Create a MediaStore model based on the MediaStore.tpcm example.
 
-    parser = argparse.ArgumentParser(description="Generate PCM models")
-    parser.add_argument(
-        "--minimal", action="store_true", help="Generate a minimal working model"
+    Args:
+        output_file: Name of the output XML file
+
+    Returns:
+        The created model
+    """
+    # Initialize the metamodel and factories
+    rset, PCM = setup_metamodel()
+    model_factory = ModelFactory(rset, PCM)
+    expr_factory = ExpressionFactory(rset)
+
+    # Get standard definitions and resource environment
+    std_defs = get_std_definitions(rset)
+    resource_env = get_resource_environment(rset)
+
+    # Create the base model
+    model = model_factory.create_model()
+
+    # Add standard definitions and resource environment
+    std_defs.add_to_model(model)
+    resource_env.add_to_model(model)
+
+    # Create repository
+    repository = model_factory.create_repository("MediaStore")
+
+    # Create datatypes
+    file_content_type = model_factory.create_composed_datatype("FileContent", [])
+    repository.contents.append(file_content_type)
+
+    # Get primitive types from standard definitions
+    int_type = std_defs.get_element("int_type")  # Integer type
+
+    # Create AudioCollectionRequest datatype
+    audio_collection_request_type = model_factory.create_composed_datatype(
+        "AudioCollectionRequest", [("Count", int_type), ("Size", int_type)]
     )
-    parser.add_argument(
-        "--output",
-        "-o",
-        default="generated",
-        help="Output file name (without extension)",
+    repository.contents.append(audio_collection_request_type)
+
+    # Create interfaces
+    # 1. IFileStorage interface
+    ifile_storage = model_factory.create_domain_interface("IFileStorage")
+    
+    get_files_op = model_factory.create_operation_signature("getFiles")
+    get_files_param = model_factory.create_parameter("audioRequest", audio_collection_request_type)
+    get_files_op.parameters.append(get_files_param)
+    get_files_op._return = file_content_type  # Set return type to FileContent
+    ifile_storage.contents.append(get_files_op)
+    
+    store_file_op = model_factory.create_operation_signature("storeFile")
+    store_file_param = model_factory.create_parameter("file", file_content_type)
+    store_file_op.parameters.append(store_file_param)
+    ifile_storage.contents.append(store_file_op)
+    
+    repository.contents.append(ifile_storage)
+    
+    # 2. IDownload interface
+    idownload = model_factory.create_domain_interface("IDownload")
+    
+    download_op = model_factory.create_operation_signature("download")
+    download_param = model_factory.create_parameter("audioRequest", audio_collection_request_type)
+    download_op.parameters.append(download_param)
+    download_op._return = audio_collection_request_type
+    idownload.contents.append(download_op)
+    
+    repository.contents.append(idownload)
+    
+    # 3. IMediaAccess interface
+    imedia_access = model_factory.create_domain_interface("IMediaAccess")
+    
+    upload_op = model_factory.create_operation_signature("upload")
+    upload_param = model_factory.create_parameter("file", file_content_type)
+    upload_op.parameters.append(upload_param)
+    imedia_access.contents.append(upload_op)
+    
+    get_file_list_op = model_factory.create_operation_signature("getFileList")
+    imedia_access.contents.append(get_file_list_op)
+    
+    repository.contents.append(imedia_access)
+    
+    # 4. IPackaging interface
+    ipackaging = model_factory.create_domain_interface("IPackaging")
+    
+    zip_op = model_factory.create_operation_signature("zip")
+    zip_param = model_factory.create_parameter("audios", audio_collection_request_type)
+    zip_op.parameters.append(zip_param)
+    zip_op._return = file_content_type
+    ipackaging.contents.append(zip_op)
+    
+    repository.contents.append(ipackaging)
+    
+    # 5. IMediaManagement interface
+    imedia_management = model_factory.create_domain_interface("IMediaManagement")
+    
+    mgmt_upload_op = model_factory.create_operation_signature("upload")
+    mgmt_upload_param = model_factory.create_parameter("file", file_content_type)
+    mgmt_upload_op.parameters.append(mgmt_upload_param)
+    imedia_management.contents.append(mgmt_upload_op)
+    
+    mgmt_download_op = model_factory.create_operation_signature("download")
+    mgmt_download_param = model_factory.create_parameter("audioRequest", audio_collection_request_type)
+    mgmt_download_op.parameters.append(mgmt_download_param)
+    imedia_management.contents.append(mgmt_download_op)
+    
+    mgmt_get_file_list_op = model_factory.create_operation_signature("getFileList")
+    imedia_management.contents.append(mgmt_get_file_list_op)
+    
+    repository.contents.append(imedia_management)
+    
+    # Get standard resource interfaces
+    icpu = std_defs.get_element("icpu")
+    ihdd = std_defs.get_element("ihdd")
+    
+    # Get standard operations for resources
+    process_op = std_defs.get_element("process_op")
+    read_op = std_defs.get_element("read_op")
+    
+    # Components
+    # 1. FileStorage component
+    file_storage = model_factory.create_component("FileStorage")
+    
+    # Roles
+    fs_provided_role = model_factory.create_provided_role("store", ifile_storage)
+    file_storage.contents.append(fs_provided_role)
+    
+    fs_cpu_role = model_factory.create_required_role("cpu", icpu)
+    file_storage.contents.append(fs_cpu_role)
+    
+    fs_hdd_role = model_factory.create_required_role("hdd", ihdd)
+    file_storage.contents.append(fs_hdd_role)
+    
+    # SEFFs
+    # getFiles SEFF
+    get_files_seff = model_factory.create_seff(fs_provided_role, get_files_op)
+    
+    # CPU processing with parameter reference - using actual expression string
+    get_files_cpu_param = model_factory.create_parameter_specification("audioRequest.Count.VALUE*75182981.91")
+    get_files_cpu_action = model_factory.create_seff_call_action(
+        fs_cpu_role, process_op, [get_files_cpu_param]
     )
-    parser.add_argument(
-        "--convert",
-        "-c",
-        action="store_true",
-        help="Convert to TPCM format after generation",
+    get_files_seff.contents.append(get_files_cpu_action)
+    
+    # HDD read action with parameter reference
+    get_files_hdd_param = model_factory.create_parameter_specification("audioRequest.Size.VALUE * audioRequest.Count.VALUE")
+    get_files_hdd_action = model_factory.create_seff_call_action(
+        fs_hdd_role, read_op, [get_files_hdd_param]
     )
+    get_files_seff.contents.append(get_files_hdd_action)
+    
+    file_storage.contents.append(get_files_seff)
+    
+    # storeFile SEFF
+    store_file_seff = model_factory.create_seff(fs_provided_role, store_file_op)
+    
+    # Use a double literal with the exact value from MediaStore.tpcm
+    store_file_cpu_expr = expr_factory.create_double_literal(75182981.91)
+    store_file_cpu_param = model_factory.create_parameter_specification(store_file_cpu_expr)
+    store_file_cpu_action = model_factory.create_seff_call_action(
+        fs_cpu_role, process_op, [store_file_cpu_param]
+    )
+    store_file_seff.contents.append(store_file_cpu_action)
+    
+    file_storage.contents.append(store_file_seff)
+    repository.contents.append(file_storage)
+    
+    # 2. Packaging component
+    packaging = model_factory.create_component("Packaging")
+    
+    # Roles
+    pkg_provided_role = model_factory.create_provided_role("packaging", ipackaging)
+    packaging.contents.append(pkg_provided_role)
+    
+    pkg_cpu_role = model_factory.create_required_role("cpu", icpu)
+    packaging.contents.append(pkg_cpu_role)
+    
+    # SEFFs
+    # zip SEFF
+    zip_seff = model_factory.create_seff(pkg_provided_role, zip_op)
+    
+    # First CPU processing with PDF - using string directly
+    zip_cpu_pdf_param = model_factory.create_parameter_specification("DoublePDF[(21;0.1)(13;0.9)]")
+    zip_cpu_pdf_action = model_factory.create_seff_call_action(
+        pkg_cpu_role, process_op, [zip_cpu_pdf_param]
+    )
+    zip_seff.contents.append(zip_cpu_pdf_action)
+    
+    # Second CPU processing with bytesize
+    zip_cpu_bytesize_param = model_factory.create_parameter_specification("1.0512 * audios.BYTESIZE")
+    zip_cpu_bytesize_action = model_factory.create_seff_call_action(
+        pkg_cpu_role, process_op, [zip_cpu_bytesize_param]
+    )
+    zip_seff.contents.append(zip_cpu_bytesize_action)
+    
+    packaging.contents.append(zip_seff)
+    repository.contents.append(packaging)
+    
+    # 3. MediaAccess component
+    media_access = model_factory.create_component("MediaAccess")
+    
+    # Roles
+    ma_access_role = model_factory.create_provided_role("access", imedia_access)
+    media_access.contents.append(ma_access_role)
+    
+    ma_download_role = model_factory.create_provided_role("download", idownload)
+    media_access.contents.append(ma_download_role)
+    
+    ma_storage_role = model_factory.create_required_role("storage", ifile_storage)
+    media_access.contents.append(ma_storage_role)
+    
+    ma_cpu_role = model_factory.create_required_role("cpu", icpu)
+    media_access.contents.append(ma_cpu_role)
+    
+    # SEFFs
+    # upload SEFF
+    upload_seff = model_factory.create_seff(ma_access_role, upload_op)
+    
+    # CPU processing with PDF
+    upload_cpu_param = model_factory.create_parameter_specification("DoublePDF[(15;0.2)(33;0.8)]")
+    upload_cpu_action = model_factory.create_seff_call_action(
+        ma_cpu_role, process_op, [upload_cpu_param]
+    )
+    upload_seff.contents.append(upload_cpu_action)
+    
+    # External call to storeFile
+    upload_store_param = model_factory.create_parameter_specification("file.BYTESIZE")
+    upload_store_action = model_factory.create_external_call_action(
+        ma_storage_role, store_file_op, [upload_store_param]
+    )
+    upload_seff.contents.append(upload_store_action)
+    
+    media_access.contents.append(upload_seff)
+    
+    # getFileList SEFF
+    get_file_list_seff = model_factory.create_seff(ma_access_role, get_file_list_op)
+    
+    # CPU processing with PDF
+    get_file_list_cpu_param = model_factory.create_parameter_specification("DoublePDF[(28;0.3)(19;0.7)]")
+    get_file_list_cpu_action = model_factory.create_seff_call_action(
+        ma_cpu_role, process_op, [get_file_list_cpu_param]
+    )
+    get_file_list_seff.contents.append(get_file_list_cpu_action)
+    
+    media_access.contents.append(get_file_list_seff)
+    
+    # download.download SEFF
+    download_seff = model_factory.create_seff(ma_download_role, download_op)
+    
+    # CPU processing with PDF
+    download_cpu_param = model_factory.create_parameter_specification("DoublePDF[(55;0.5)(30;0.5)]")
+    download_cpu_action = model_factory.create_seff_call_action(
+        ma_cpu_role, process_op, [download_cpu_param]
+    )
+    download_seff.contents.append(download_cpu_action)
+    
+    # External call to getFiles
+    download_get_files_param = model_factory.create_parameter_specification("audioRequest.Count.VALUE")
+    download_get_files_size_param = model_factory.create_parameter_specification("audioRequest.Size.VALUE")
+    
+    download_get_files_action = model_factory.create_external_call_action(
+        ma_storage_role, get_files_op, [download_get_files_param, download_get_files_size_param]
+    )
+    download_seff.contents.append(download_get_files_action)
+    
+    media_access.contents.append(download_seff)
+    repository.contents.append(media_access)
+    
+    # 4. MediaManagement component
+    media_management = model_factory.create_component("MediaManagement")
+    
+    # Roles
+    mm_cpu_role = model_factory.create_required_role("cpu", icpu)
+    media_management.contents.append(mm_cpu_role)
+    
+    mm_management_role = model_factory.create_provided_role("management", imedia_management)
+    media_management.contents.append(mm_management_role)
+    
+    mm_download_role = model_factory.create_required_role("download", idownload)
+    media_management.contents.append(mm_download_role)
+    
+    mm_packaging_role = model_factory.create_required_role("packaging", ipackaging)
+    media_management.contents.append(mm_packaging_role)
+    
+    mm_access_role = model_factory.create_required_role("access", imedia_access)
+    media_management.contents.append(mm_access_role)
+    
+    # SEFFs
+    # upload SEFF
+    mm_upload_seff = model_factory.create_seff(mm_management_role, mgmt_upload_op)
+    
+    # CPU processing with PDF
+    mm_upload_cpu_param = model_factory.create_parameter_specification("DoublePDF[(10;0.7)(30;0.3)]")
+    mm_upload_cpu_action = model_factory.create_seff_call_action(
+        mm_cpu_role, process_op, [mm_upload_cpu_param]
+    )
+    mm_upload_seff.contents.append(mm_upload_cpu_action)
+    
+    # External call to access.upload
+    mm_upload_access_param = model_factory.create_parameter_specification("file.BYTESIZE")
+    mm_upload_access_action = model_factory.create_external_call_action(
+        mm_access_role, upload_op, [mm_upload_access_param]
+    )
+    mm_upload_seff.contents.append(mm_upload_access_action)
+    
+    media_management.contents.append(mm_upload_seff)
+    
+    # download SEFF
+    mm_download_seff = model_factory.create_seff(mm_management_role, mgmt_download_op)
+    
+    # CPU processing with PDF
+    mm_download_cpu_param = model_factory.create_parameter_specification("DoublePDF[(90;0.2)(89;0.8)]")
+    mm_download_cpu_action = model_factory.create_seff_call_action(
+        mm_cpu_role, process_op, [mm_download_cpu_param]
+    )
+    mm_download_seff.contents.append(mm_download_cpu_action)
+    
+    # External call to download.download
+    mm_download_down_count_param = model_factory.create_parameter_specification("audioRequest.Count.VALUE")
+    mm_download_down_size_param = model_factory.create_parameter_specification("audioRequest.Size.VALUE")
+    
+    mm_download_down_action = model_factory.create_external_call_action(
+        mm_download_role, download_op, [mm_download_down_count_param, mm_download_down_size_param]
+    )
+    mm_download_seff.contents.append(mm_download_down_action)
+    
+    media_management.contents.append(mm_download_seff)
+    
+    # getFileList SEFF
+    mm_get_file_list_seff = model_factory.create_seff(mm_management_role, mgmt_get_file_list_op)
+    
+    # CPU processing with PDF
+    mm_get_file_list_cpu_param = model_factory.create_parameter_specification("DoublePDF[(59;0.3)(13;0.7)]")
+    mm_get_file_list_cpu_action = model_factory.create_seff_call_action(
+        mm_cpu_role, process_op, [mm_get_file_list_cpu_param]
+    )
+    mm_get_file_list_seff.contents.append(mm_get_file_list_cpu_action)
+    
+    # External call to access.getFileList
+    mm_get_file_list_access_action = model_factory.create_external_call_action(
+        mm_access_role, get_file_list_op, []
+    )
+    mm_get_file_list_seff.contents.append(mm_get_file_list_access_action)
+    
+    media_management.contents.append(mm_get_file_list_seff)
+    repository.contents.append(media_management)
+    
+    # Add repository to model
+    model.fragments.append(repository)
+    
+    # Save the model
+    save_model(model, output_file, rset)
+    
+    print(f"MediaStore model created successfully: {output_file}")
+    return model
 
-    args = parser.parse_args()
 
-    # Generate the appropriate model
-    output_file = f"{args.output}.xml"
-
-    if args.minimal:
-        model = create_minimal_model(output_file)
-        print(f"Minimal model generated: {output_file}")
-    else:
-        # Create model generator for random models
-        generator = ModelGenerator(seed=42)  # Set seed for reproducibility
-        model, model_resource = generator.generate_complete_model(args.output)
-        print(f"Random model generated: {output_file}")
-
-    # Optionally convert to TPCM format
-    if args.convert:
-        import subprocess
-
-        tpcm_path = f"{args.output}.tpcm"
-        try:
-            result = subprocess.run(
-                ["java", "-jar", "SaveAs.jar", output_file, tpcm_path],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            print(f"Model converted to TPCM format: {tpcm_path}")
-            if result.stdout:
-                print(f"Converter output: {result.stdout}")
-        except subprocess.CalledProcessError as e:
-            print(f"Error converting to TPCM format: {e}")
-            if e.stdout:
-                print(f"Converter stdout: {e.stdout}")
-            if e.stderr:
-                print(f"Converter stderr: {e.stderr}")
-
-
-if __name__ == "__main__":
-    main()
+# Main functionality moved to main.py

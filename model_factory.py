@@ -435,11 +435,73 @@ class ModelFactory:
         """Create a parameter specification.
         
         Args:
-            expression: Expression to use as the parameter value
+            expression: Expression to use as the parameter value - can be string or Expression
             
         Returns:
             A new ParameterSpecification instance
         """
         param_spec = self.PCM.ParameterSpecification()
-        param_spec.specification = expression
+        
+        # If expression is a string, use a literal as a placeholder
+        # In a full implementation, we would properly parse the expression
+        if isinstance(expression, str):
+            from expression_factory import ExpressionFactory
+            expr_factory = ExpressionFactory(self.rset)
+            # Use a literal with a meaningful value as a placeholder
+            if "DoublePDF" in expression:
+                # If it's a PDF, extract the first value as a representative
+                try:
+                    import re
+                    values = re.findall(r'\((\d+);', expression)
+                    if values:
+                        value = float(values[0])
+                    else:
+                        value = 1.0
+                except:
+                    value = 1.0
+                literal = expr_factory.create_double_literal(value)
+            elif ".VALUE" in expression:
+                # For parameterized values, use a placeholder
+                literal = expr_factory.create_double_literal(1.0)
+            else:
+                # Try to convert to a number if possible
+                try:
+                    value = float(expression)
+                    literal = expr_factory.create_double_literal(value)
+                except:
+                    literal = expr_factory.create_double_literal(1.0)
+            
+            param_spec.specification = literal
+            
+            # Store original expression in metadata
+            # This helps with debugging and verification
+            param_spec.original_expression = expression
+        else:
+            # Use the provided expression directly
+            param_spec.specification = expression
+                
         return param_spec
+        
+    def create_external_call_action(self, role, signature, parameters=None):
+        """Create an external call action for SEFF.
+        
+        For simplicity, we're using the same type as a regular SEFF call action.
+        In a real implementation, this would be a specific ExternalCallAction class.
+        
+        Args:
+            role: Required role to call through
+            signature: Signature to call
+            parameters: Optional list of parameter specifications
+            
+        Returns:
+            A new call action instance
+        """
+        # For simplicity, we'll use SEFFCallAction
+        # In a real implementation, this would be a specific ExternalCallAction class
+        call = self.PCM.SEFFCallAction()
+        call.role = role
+        call.signature = signature
+        if parameters:
+            for param in parameters:
+                call.parameters.append(param)
+        return call
