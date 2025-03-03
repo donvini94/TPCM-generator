@@ -1,34 +1,42 @@
-# CLAUDE.md - Project Guidelines
+# CLAUDE.md - TPCM Generator Project Guidelines
 
 ## Build Commands
 ```bash
 # Install dependencies
 poetry install
 
-# Run the generator
+# Run the generator 
 python main.py
 
-# Update dependencies
-poetry update
+# Run all tests
+python tests/run_tests.py
+
+# Run a single test
+python -m unittest tests.test_model_factory.test_create_minimal_repository
+
+# Debug with debugpy (for VS Code)
+python -m debugpy --listen 5678 --wait-for-client main.py
 ```
 
 ## Project Structure
 - `ecores/` - Metamodel definitions (Ecore files)
 - `input/` - Input files for generation
 - `output/` - Generated models
+- `tests/` - Unit tests
 
 ## Code Style
 - Use Google-style docstrings with Args/Returns sections
-- 4-space indentation
-- ~88 character line length
+- 4-space indentation, ~88 character line length
 - Snake_case for variables/functions, CamelCase for classes
-- Import order: stdlib -> third-party -> local
-- Return type annotations encouraged
+- Type annotations for function parameters and returns
+- Import order: stdlib → third-party (pyecore, etc.) → local
+- Class methods that create objects should return the created object
 
 ## Error Handling
 - Use descriptive error messages
 - Validate inputs at function boundaries
 - Prefer early returns over deep nesting
+- Use assertions for internal logic verification
 
 ## Development
-This project uses PyEcore to work with Ecore metamodels and generate models based on them. Models are exported as XML files that can be used in other tools.
+This project uses PyEcore to work with Ecore metamodels and generate models based on them. Models are exported as XML files that can be used with Palladio Component Model tooling.

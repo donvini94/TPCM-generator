@@ -96,6 +96,7 @@ python tests/run_tests.py
 ### Main Generator Parameters
 
 - `--minimal`, `-m`: Generate a minimal working model (ignores random generation parameters)
+- `--mediastore`, `-ms`: Generate the mediastore example model (ignores random generation parameters)
 - `--output`, `-o`: Base name for output files (without extension)
 - `--seed`, `-s`: Random seed for reproducible generation
 - `--interfaces`, `-i`: Number of interfaces to generate (default: 5)
