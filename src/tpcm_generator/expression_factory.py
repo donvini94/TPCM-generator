@@ -1,5 +1,6 @@
 from pyecore.resources import ResourceSet, URI
 from pyecore.utils import DynamicEPackage
+from .probability_factory import ProbabilityFactory
 
 class ExpressionFactory:
     """Factory class for creating stochastic expressions (stoex)."""
@@ -18,16 +19,10 @@ class ExpressionFactory:
         self.rset.metamodel_registry[stoex_metamodel.nsURI] = stoex_metamodel
         self.stoex = DynamicEPackage(stoex_metamodel)
         
-        # Ensure ProbabilityFunction and Units metamodels are loaded
-        prob_resource = self.rset.get_resource(URI("ecores/ProbabilityFunction.ecore"))
-        prob_metamodel = prob_resource.contents[0]
-        self.rset.metamodel_registry[prob_metamodel.nsURI] = prob_metamodel
-        self.prob = DynamicEPackage(prob_metamodel)
-        
-        units_resource = self.rset.get_resource(URI("ecores/Units.ecore"))
-        units_metamodel = units_resource.contents[0]
-        self.rset.metamodel_registry[units_metamodel.nsURI] = units_metamodel
-        self.units = DynamicEPackage(units_metamodel)
+        # Initialize ProbabilityFactory and keep direct references to metamodels
+        self.prob_factory = ProbabilityFactory(self.rset)
+        self.prob = self.prob_factory.prob
+        self.units = self.prob_factory.units
     
     # === Literals ===
     
@@ -256,57 +251,126 @@ class ExpressionFactory:
         expr.elseExpression = else_expr
         return expr
         
+    def create_random_variable(self, specification_string):
+        """Create a random variable with a specification string.
+        
+        Args:
+            specification_string: String representation of the stochastic expression
+            
+        Returns:
+            A new RandomVariable instance
+        """
+        return self.stoex.RandomVariable(specification=specification_string)
 
     # === Probability Functions ===
     
-    def create_exp_distribution(self, rate):
+    def create_probability_function_literal(self, function):
+        """Create a probability function literal.
+        
+        Args:
+            function: A probability function instance
+            
+        Returns:
+            A new ProbabilityFunctionLiteral
+        """
+        func = self.stoex.ProbabilityFunctionLiteral()
+        func.function_ProbabilityFunctionLiteral = function
+        return func
+    
+    def create_exp_distribution(self, rate, unit=None):
         """Create an exponential distribution.
         
         Args:
             rate: Rate parameter (lambda)
+            unit: Optional unit for the distribution
             
         Returns:
             A new ProbabilityFunctionLiteral containing an ExponentialDistribution
         """
-        exp_dist = self.prob.ExponentialDistribution()
-        exp_dist.rate = rate
-        
-        func = self.stoex.ProbabilityFunctionLiteral()
-        func.function_ProbabilityFunctionLiteral = exp_dist
-        return func
+        exp_dist = self.prob_factory.create_exponential_distribution(rate, unit)
+        return self.create_probability_function_literal(exp_dist)
     
-    def create_normal_distribution(self, mean, standard_deviation):
+    def create_normal_distribution(self, mean, standard_deviation, unit=None):
         """Create a normal distribution.
         
         Args:
             mean: Mean value
             standard_deviation: Standard deviation
+            unit: Optional unit for the distribution
             
         Returns:
             A new ProbabilityFunctionLiteral containing a NormalDistribution
         """
-        normal_dist = self.prob.NormalDistribution()
-        normal_dist.mu = mean
-        normal_dist.sigma = standard_deviation
-        
-        func = self.stoex.ProbabilityFunctionLiteral()
-        func.function_ProbabilityFunctionLiteral = normal_dist
-        return func
+        normal_dist = self.prob_factory.create_normal_distribution(mean, standard_deviation, unit)
+        return self.create_probability_function_literal(normal_dist)
     
-    def create_uniform_distribution(self, lower, upper):
-        """Create a uniform distribution.
+    def create_lognormal_distribution(self, mu, sigma, unit=None):
+        """Create a lognormal distribution.
         
         Args:
-            lower: Lower bound
-            upper: Upper bound
+            mu: Scale parameter (mu)
+            sigma: Shape parameter (sigma)
+            unit: Optional unit for the distribution
             
         Returns:
-            A new ProbabilityFunctionLiteral containing a UniformDistribution
+            A new ProbabilityFunctionLiteral containing a LognormalDistribution
         """
-        uniform_dist = self.prob.UniformDistribution()
-        uniform_dist.lowerBound = lower
-        uniform_dist.upperBound = upper
+        lognormal_dist = self.prob_factory.create_lognormal_distribution(mu, sigma, unit)
+        return self.create_probability_function_literal(lognormal_dist)
+    
+    def create_gamma_distribution(self, alpha, theta, unit=None):
+        """Create a gamma distribution.
         
-        func = self.stoex.ProbabilityFunctionLiteral()
-        func.function_ProbabilityFunctionLiteral = uniform_dist
-        return func
+        Args:
+            alpha: Shape parameter (alpha)
+            theta: Scale parameter (theta)
+            unit: Optional unit for the distribution
+            
+        Returns:
+            A new ProbabilityFunctionLiteral containing a GammaDistribution
+        """
+        gamma_dist = self.prob_factory.create_gamma_distribution(alpha, theta, unit)
+        return self.create_probability_function_literal(gamma_dist)
+    
+    def create_int_pmf_distribution(self, samples, unit=None):
+        """Create an integer probability mass function.
+        
+        Args:
+            samples: List of (value, probability) tuples where value is an int
+            unit: Optional unit for the distribution
+            
+        Returns:
+            A new ProbabilityFunctionLiteral containing a ProbabilityMassFunction
+        """
+        pmf = self.prob_factory.create_int_pmf(samples)
+        if unit:
+            pmf.unit = unit
+        return self.create_probability_function_literal(pmf)
+    
+    def create_double_pmf_distribution(self, samples, unit=None):
+        """Create a double probability mass function.
+        
+        Args:
+            samples: List of (value, probability) tuples where value is a float
+            unit: Optional unit for the distribution
+            
+        Returns:
+            A new ProbabilityFunctionLiteral containing a ProbabilityMassFunction
+        """
+        pmf = self.prob_factory.create_double_pmf(samples)
+        if unit:
+            pmf.unit = unit
+        return self.create_probability_function_literal(pmf)
+    
+    def create_boxed_pdf_distribution(self, samples, unit=None):
+        """Create a boxed probability density function.
+        
+        Args:
+            samples: List of (value, probability) tuples
+            unit: Optional unit for the distribution
+            
+        Returns:
+            A new ProbabilityFunctionLiteral containing a BoxedPDF
+        """
+        pdf = self.prob_factory.create_boxed_pdf(samples, unit)
+        return self.create_probability_function_literal(pdf)
