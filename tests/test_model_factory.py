@@ -1,8 +1,10 @@
 import os
-from model_factory import ModelFactory
-from expression_factory import ExpressionFactory
-from utils import save_model
-from std_definitions import get_std_definitions
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
+from tpcm_generator.model_factory import ModelFactory
+from tpcm_generator.expression_factory import ExpressionFactory
+from tpcm_generator.utils import save_model
+from tpcm_generator.std_definitions import get_std_definitions
 
 def test_create_minimal_repository():
     """Test creating a minimal repository model."""

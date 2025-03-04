@@ -11,7 +11,10 @@ class TestModelGenerator(unittest.TestCase):
     def test_imports(self):
         """Test that the key modules can be imported."""
         try:
-            from model_generator import create_minimal_model, create_mediastore_model
+            import sys
+            import os
+            sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
+            from tpcm_generator.model_generator import create_minimal_model, create_mediastore_model
             self.assertTrue(callable(create_minimal_model), "create_minimal_model should be callable")
             self.assertTrue(callable(create_mediastore_model), "create_mediastore_model should be callable")
         except ImportError as e:

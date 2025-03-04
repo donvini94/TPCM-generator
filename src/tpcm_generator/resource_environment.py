@@ -90,7 +90,7 @@ class _ResourceEnvironmentGenerator:
     def _initialize_resource_environment(self):
         """Initialize the resource environment based on the specification."""
         # Import standard definitions
-        from std_definitions import get_std_definitions
+        from .std_definitions import get_std_definitions
 
         std_defs = get_std_definitions(self.rset)
 
@@ -240,13 +240,16 @@ class _ResourceEnvironmentGenerator:
         """
         model.fragments.append(self._resource_env)
         return model
-        
+
     def get_resource_containers(self):
         """Get the resource containers from the resource environment.
-        
+
         Returns:
             List of resource containers
         """
         # Return the resource containers present in the resource environment
-        return [content for content in self._resource_env.contents 
-                if hasattr(content, 'eClass') and content.eClass.name == "ResourceContainer"]
+        return [
+            content
+            for content in self._resource_env.contents
+            if hasattr(content, "eClass") and content.eClass.name == "ResourceContainer"
+        ]

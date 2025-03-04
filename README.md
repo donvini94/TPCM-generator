@@ -20,13 +20,23 @@ The generator creates EMF models programmatically, transforms them to TPCM forma
 
 ```
 TPCM_generator/
-├── main.py                # Entry point for model generation
-├── model_factory.py       # Factory for creating model elements
-├── expression_factory.py  # Factory for creating expressions
-├── model_generator.py     # Random model generation logic
-├── utils.py               # Model creation and persistence utilities
-├── std_definitions.py     # Standard component definitions (singleton)
-├── resource_environment.py # Resource environment definitions (singleton)
+├── main.py                # Main entry point (wrapper)
+├── src/                   # Source code package
+│   └── tpcm_generator/    # Main package
+│       ├── __init__.py    # Package initialization
+│       ├── model_factory.py # Factory for creating model elements
+│       ├── expression_factory.py # Factory for creating expressions
+│       ├── model_generator.py # Random model generation logic
+│       ├── utils.py       # Model creation and persistence utilities
+│       ├── std_definitions.py # Standard component definitions
+│       ├── resource_environment.py # Resource environment definitions
+│       └── bin/           # Command-line scripts
+│           └── main.py    # Main CLI implementation
+├── tests/                 # Test files
+│   ├── run_tests.py       # Test runner
+│   ├── test_model_factory.py
+│   ├── test_model_generator.py
+│   └── test_conversion.py
 └── ecores/                # Ecore metamodel definitions
     ├── TPCM.ecore         # Primary TPCM metamodel
     ├── stoex.ecore        # Stochastic expressions metamodel
@@ -56,6 +66,18 @@ nix develop -c python main.py --output my_model --convert
 
 ### Manual Installation
 
+First, install the package and dependencies:
+
+```bash
+# Install in development mode with Poetry
+poetry install
+
+# Or install with pip
+pip install -e .
+```
+
+Alternatively, just install the dependencies:
+
 ```bash
 # Install dependencies
 pip install pyecore>=0.15.2 textx>=4.1.0
@@ -68,9 +90,6 @@ pip install pyecore>=0.15.2 textx>=4.1.0
 Use the Nix environment to run the Python scripts:
 
 ```bash
-# Generate a minimal working model 
-nix develop -c python main.py --minimal --convert
-
 # Generate a random model
 nix develop -c python main.py --output model_name --components 10 --interfaces 5 --containers 3 --convert
 
@@ -80,7 +99,17 @@ nix develop -c python tests/run_tests.py
 
 ### Running Manually
 
-If you've installed the dependencies manually:
+If you've installed the package with Poetry:
+
+```bash
+# Using the installed command
+tpcm-generator --minimal --convert
+
+# Generate a random model
+tpcm-generator --output model_name --components 10 --interfaces 5 --containers 3 --convert
+```
+
+Or run directly with Python:
 
 ```bash
 # Generate a minimal working model
@@ -90,13 +119,11 @@ python main.py --minimal --convert
 python main.py --output model_name --components 10 --interfaces 5 --containers 3 --convert
 
 # Run the tests
-python tests/run_tests.py
+python -m tests.run_tests
 ```
 
 ### Main Generator Parameters
 
-- `--minimal`, `-m`: Generate a minimal working model (ignores random generation parameters)
-- `--mediastore`, `-ms`: Generate the mediastore example model (ignores random generation parameters)
 - `--output`, `-o`: Base name for output files (without extension)
 - `--seed`, `-s`: Random seed for reproducible generation
 - `--interfaces`, `-i`: Number of interfaces to generate (default: 5)

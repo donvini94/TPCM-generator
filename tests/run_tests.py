@@ -5,9 +5,6 @@ import unittest
 import sys
 import os
 
-# Add parent directory to path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 def run_all_tests():
     """Run all test cases."""
     # Discover all tests in the tests directory

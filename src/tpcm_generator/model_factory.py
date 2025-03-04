@@ -1,6 +1,6 @@
 from pyecore.resources import ResourceSet, URI
 from pyecore.utils import DynamicEPackage
-from utils import setup_metamodel
+from .utils import setup_metamodel
 
 
 class ModelFactory:

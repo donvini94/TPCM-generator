@@ -2,6 +2,8 @@
 
 ## Build Commands
 ```bash
+# setup nix environment
+nix develop
 # Install dependencies
 poetry install
 
@@ -14,8 +16,6 @@ python tests/run_tests.py
 # Run a single test
 python -m unittest tests.test_model_factory.test_create_minimal_repository
 
-# Debug with debugpy (for VS Code)
-python -m debugpy --listen 5678 --wait-for-client main.py
 ```
 
 ## Project Structure
