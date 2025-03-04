@@ -51,17 +51,6 @@ class ModelFactory:
         """
         return self.PCM.System(name=name)
 
-    def create_resource_environment(self, name):
-        """Create a new resource environment.
-
-        Args:
-            name: Name of the resource environment
-
-        Returns:
-            A new ResourceEnvironment instance
-        """
-        return self.PCM.ResourceEnvironment(name=name)
-
     def create_allocation(self, name):
         """Create a new allocation.
 
@@ -336,17 +325,6 @@ class ModelFactory:
             spec.assemblies.append(assembly)
         allocation.spec = spec
         return allocation
-        
-    def create_allocation(self, name):
-        """Create an allocation.
-        
-        Args:
-            name: Name of the allocation
-            
-        Returns:
-            A new Allocation instance
-        """
-        return self.PCM.Allocation(name=name)
 
     # === Usage Model ===
 
@@ -360,13 +338,13 @@ class ModelFactory:
             A new UsageScenario instance
         """
         return self.PCM.UsageScenario(name=name)
-        
+
     def create_usage_model(self, name):
         """Create a usage model.
-        
+
         Args:
             name: Name of the usage model
-            
+
         Returns:
             A new Usage instance
         """
@@ -453,3 +431,10 @@ class ModelFactory:
             for param in parameters:
                 call.parameters.append(param)
         return call
+
+    def create_parameter_specification(self, reference=None, specification=None):
+        ps = self.PCM.ParameterSpecification()
+        ps.reference = reference
+        ps.specification = specification
+
+        return ps

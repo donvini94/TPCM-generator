@@ -374,3 +374,19 @@ class ExpressionFactory:
         """
         pdf = self.prob_factory.create_boxed_pdf(samples, unit)
         return self.create_probability_function_literal(pdf)
+        
+    def create_function_literal(self, function_id, parameters=None):
+        """Create a function literal expression.
+        
+        Args:
+            function_id: The function identifier/name
+            parameters: List of parameters (Expression objects)
+            
+        Returns:
+            A new FunctionLiteral
+        """
+        func = self.stoex.FunctionLiteral(id=function_id)
+        if parameters:
+            for param in parameters:
+                func.parameters_FunctionLiteral.append(param)
+        return func

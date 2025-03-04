@@ -121,45 +121,116 @@ class ModelGenerator:
 
         # Create interfaces
         for i in range(num_interfaces):
-            interface = self.model_factory.create_domain_interface(
+            provided_role = self.model_factory.create_domain_interface(
                 self._random_name("interface")
             )
 
             # Add 1-5 signatures to each interface
             sig_count = random.randint(1, 5)
             for j in range(sig_count):
-                self._create_random_signature(interface)
+                self._create_random_signature(provided_role)
 
-            repository.contents.append(interface)
-            self.interfaces.append(interface)
+            repository.contents.append(provided_role)
+            self.interfaces.append(provided_role)
 
         # Create components
         for i in range(num_components):
             component = self.model_factory.create_component(
                 self._random_name("component")
             )
+            provided_roles = []
+            required_roles = []
 
             # Each component provides 0-2 interfaces
             provided_count = random.randint(0, 2)
             for j in range(provided_count):
                 if self.interfaces:
-                    interface = random.choice(self.interfaces)
+                    provided_role = random.choice(self.interfaces)
                     role = self.model_factory.create_provided_role(
-                        self._random_name("provided"), interface
+                        self._random_name("provided"), provided_role
                     )
                     component.contents.append(role)
+                    provided_roles.append(role)
 
             # Each component requires 0-3 interfaces
             required_count = random.randint(0, 3)
             for j in range(required_count):
                 if self.interfaces:
-                    interface = random.choice(self.interfaces)
+                    provided_role = random.choice(self.interfaces)
                     role = self.model_factory.create_required_role(
-                        self._random_name("required"), interface
+                        self._random_name("required"), provided_role
                     )
                     component.contents.append(role)
-
+                    required_roles.append(role)
             repository.contents.append(component)
+
+            cpu_role = self.model_factory.create_required_role(
+                "cpu", self.std_defs.get_cpu_interface()
+            )
+            hdd_role = self.model_factory.create_required_role(
+                "hdd", self.std_defs.get_hdd_interface()
+            )
+            required_roles.append(cpu_role)
+            required_roles.append(hdd_role)
+            component.contents.append(cpu_role)
+            component.contents.append(hdd_role)
+
+            for provided_role in provided_roles:
+                for signatur in provided_role.type.contents:
+                    seff = self.model_factory.create_seff(provided_role, signatur)
+                    # TODO: Random zwischen 1 und anzahl der rollen in required roles
+                    # TODO: 2. Ebene: Anzahl signatures in interfaces von der required role die man gewählt hat
+                    required_role = random.choice(required_roles)
+                    required_interface = required_role.type
+                    required_signature = random.choice(required_interface.contents)
+                    parameters = required_signature.parameters
+
+                    coa = self.model_factory.create_seff_call_action(
+                        required_role, required_signature
+                    )
+                    for param in parameters:
+                        if param.type == self.primitive_types["Integer"]:
+                            # TODO: create random int resutl
+                            result = self.model_factory.create_parameter_specification(
+                                specification=self.expr_factory.create_int_literal(
+                                    random.randint(0, 100)
+                                )
+                            )
+                            coa.parameters.append(result)
+                        elif param.type == self.primitive_types["Double"]:
+                            # Create random double/float result
+                            result = self.model_factory.create_parameter_specification(
+                                specification=self.expr_factory.create_double_literal(
+                                    round(random.uniform(0.0, 100.0), 2)
+                                )
+                            )
+                            coa.parameters.append(result)
+
+                        elif param.type == self.primitive_types["String"]:
+                            # Create random string result
+                            length = random.randint(5, 15)
+                            random_string = "".join(
+                                random.choices(
+                                    string.ascii_letters + string.digits, k=length
+                                )
+                            )
+                            result = self.model_factory.create_parameter_specification(
+                                specification=self.expr_factory.create_string_literal(
+                                    random_string
+                                )
+                            )
+                            coa.parameters.append(result)
+
+                        elif param.type == self.primitive_types["Boolean"]:
+                            # Create random boolean result
+                            result = self.model_factory.create_parameter_specification(
+                                specification=self.expr_factory.create_bool_literal(
+                                    random.choice([True, False])
+                                )
+                            )
+                            coa.parameters.append(result)
+                    seff.contents.append(coa)
+                    component.contents.append(seff)
             self.components.append(component)
 
         return repository
