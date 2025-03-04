@@ -365,3 +365,59 @@ class _PCMStandardDefinitions:
             Dictionary of all standard elements
         """
         return self._elements.copy()  # Return a copy to prevent modification
+        
+    def get_cpu_resource_type(self):
+        """Get the CPU resource type.
+        
+        Returns:
+            The CPU resource type
+        """
+        return self._elements["cpu_resource"]
+        
+    def get_hdd_resource_type(self):
+        """Get the HDD resource type.
+        
+        Returns:
+            The HDD resource type
+        """
+        return self._elements["hdd_resource"]
+        
+    def get_cpu_interface(self):
+        """Get the CPU interface.
+        
+        Returns:
+            The CPU interface
+        """
+        return self._elements["icpu"]
+        
+    def get_hdd_interface(self):
+        """Get the HDD interface.
+        
+        Returns:
+            The HDD interface
+        """
+        return self._elements["ihdd"]
+        
+    def get_process_operation(self):
+        """Get the CPU process operation.
+        
+        Returns:
+            The process operation
+        """
+        return self._elements["process_op"]
+        
+    def get_read_operation(self):
+        """Get the HDD read operation.
+        
+        Returns:
+            The read operation
+        """
+        return self._elements["read_op"]
+        
+    def get_write_operation(self):
+        """Get the HDD write operation.
+        
+        Returns:
+            The write operation
+        """
+        return self._elements["write_op"]
