@@ -98,7 +98,7 @@ def main():
 
     # Convert to TPCM if requested
     if args.convert:
-        tpcm_path = f"{args.output}.tpcm"
+        tpcm_path = f"input/{args.output}.tpcm"
         print(f"Converting to TPCM format: {tpcm_path}...")
         if convert_to_tpcm(output_file, tpcm_path):
             print(f"Model converted to TPCM format: {tpcm_path}")
