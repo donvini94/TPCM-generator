@@ -1,0 +1,156 @@
+repository MediaStore {
+	datatype FileContent {}
+	datatype AudioCollectionRequest {
+		Count PrimitiveTypes::Integer
+		Size PrimitiveTypes::Integer
+	}
+	
+	interface IFileStorage {
+		op getFiles(audioRequest AudioCollectionRequest) FileContent
+		op storeFile(file FileContent)
+	}
+	
+	interface IDownload {
+		op download(audioRequest AudioCollectionRequest) AudioCollectionRequest
+	}
+	
+	interface IMediaAccess {
+		op upload(file FileContent)
+		op getFileList
+	}
+	
+	interface IPackaging {
+		op zip(audios AudioCollectionRequest) FileContent
+	}
+	
+	interface IMediaManagement {
+		op upload(file FileContent)
+		op download(audioRequest AudioCollectionRequest)
+		op getFileList
+	}
+	
+
+
+	component FileStorage {
+		provides store IFileStorage
+		requires cpu ICPU
+		requires hdd IHDD
+		
+		seff store.getFiles {
+			cpu.process(«audioRequest.Count.VALUE*75182981.91»)
+			hdd.read(«audioRequest.Size.VALUE * audioRequest.Count.VALUE»)
+			«audioRequest.Count.VALUE * audioRequest.Size.VALUE» -> .BYTESIZE
+		}
+		
+		seff store.storeFile {
+			cpu.process(«75182981.91»)
+		}
+	}
+	
+	component Packaging {
+		provides packaging IPackaging
+		requires cpu ICPU
+		
+		seff packaging.zip {
+			cpu.process(«DoublePDF[(21;0.1)(13;0.9)]»)
+			cpu.process(«1.0512 * audios.BYTESIZE»)
+		}
+	}
+	
+	component MediaAccess {
+		provides access IMediaAccess
+		provides download IDownload
+		requires storage IFileStorage
+		requires cpu ICPU
+		
+		seff access.upload {
+			cpu.process(«DoublePDF[(15;0.2)(33;0.8)]»)
+			storage.storeFile(.BYTESIZE: «file.BYTESIZE»)
+		}
+		
+		seff access.getFileList {
+			cpu.process(«DoublePDF[(28;0.3)(19;0.7)]»)
+		}
+		
+		seff download.download {
+			cpu.process(«DoublePDF[(55;0.5)(30;0.5)]»)
+			storage.getFiles(audioRequest.Count.VALUE: «audioRequest.Count.VALUE», audioRequest.Size.VALUE: «audioRequest.Size.VALUE») -> return.BYTESIZE
+			«return.BYTESIZE» -> .BYTESIZE
+		}
+	}
+	
+	component MediaManagement {
+		requires cpu ICPU
+		provides management IMediaManagement
+		requires download IDownload
+		requires packaging IPackaging
+		requires access IMediaAccess
+
+                // SEFF (role, signatur)
+                // DomainInterfaceProvidedRole.Signature
+		seff management.upload {
+                //SEFFContent
+                // SEFFAssignmentOrCall SEFFCallAction
+			cpu.process(«DoublePDF[(10;0.7)(30;0.3)]»)
+                // SEFFAssignmentOrCall SEFFCallAction
+			access.upload(file.BYTESIZE: «file.BYTESIZE»)
+		}
+		
+		seff management.download {
+			cpu.process(«DoublePDF[(90;0.2)(89;0.8)]»)
+			download.download(audioRequest.Count.VALUE: «audioRequest.Count.VALUE», audioRequest.Size.VALUE: «audioRequest.Size.VALUE») -> return.BYTESIZE
+		}
+		
+		seff management.getFileList {
+			cpu.process(«DoublePDF[(59;0.3)(13;0.7)]»)
+			access.getFileList
+		}
+	}
+}
+
+system Cacheless {
+	assembly FileStorageCacheless MediaStore::FileStorage
+	assembly PackagingCacheless MediaStore::Packaging
+	assembly MediaAccessCacheless MediaStore::MediaAccess
+	assembly MediaManagementCacheless MediaStore::MediaManagement
+
+        // requiringRole name from to|target
+	provides webGui MediaStore::IMediaManagement -> MediaManagementCacheless
+        // from -> target
+	PackagingCacheless -> MediaManagementCacheless
+        // from to.requiringrole
+	MediaAccessCacheless -> MediaManagementCacheless.access
+	MediaAccessCacheless -> MediaManagementCacheless.download
+	FileStorageCacheless -> MediaAccessCacheless.storage
+}
+
+allocation Cacheless {
+	alloc AppServer (PackagingCacheless, MediaAccessCacheless, MediaManagementCacheless -> Environment::ApplicationServer)
+	alloc DbServer (FileStorageCacheless -> Environment::DatabaseServer)
+}
+
+usage Cacheless {
+// openworkload
+	"Realistic" interArrivalTime(«Exp(0.04)») {
+        // scenariocontent
+                //scenariobranchaction
+		random {
+                // scenariobranch
+			(0.8) {
+                // scenariobranch.contents
+                // Entrylevelsystemcall
+                // VALUE, BYTESIZE CharacteristicReference(?)
+				Cacheless::webGui.download(audioRequest.Count.VALUE:
+					«IntPMF[(1; 0.2)(2; 0.02)(3; 0.02)(4; 0.02)(5; 0.02)(6; 0.02)(7; 0.05)(8; 0.05)(9; 0.1)(10; 0.1)(11; 0.1)(12; 0.1)(13; 0.1)(14; 0.05)(15; 0.05)]»,
+					audioRequest.Size.VALUE:
+					«IntPMF[(38303999; 0.142857)(38304000; 0.142857)(40568000; 0.142857)(41544000; 0.142857)(48280000; 0.142857)(65000000; 0.142857)(88216000; 0.142858)]»
+				)
+			}
+			(0.2) {
+				Cacheless::webGui.upload(file.BYTESIZE:
+					«IntPMF[(38303999; 0.142857)(38304000; 0.142857)(40568000; 0.142857)(41544000; 0.142857)(48280000; 0.142857)(65000000; 0.142857)(88216000; 0.142858)]»
+				)
+			}
+		}
+	}
+}

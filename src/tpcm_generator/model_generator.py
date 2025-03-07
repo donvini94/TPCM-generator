@@ -10,6 +10,7 @@ from .resource_environment import get_resource_environment
 class ModelGenerator:
     """Generator for PCM models, both minimal working examples and random models."""
 
+    # TODO: add magic number definitions at the top so they can be globally configured easily for expirments (param_count, sig_count, provided_count... etc.)
     def __init__(self, seed=None):
         """Initialize the model generator.
 
@@ -121,17 +122,17 @@ class ModelGenerator:
 
         # Create interfaces
         for i in range(num_interfaces):
-            provided_role = self.model_factory.create_domain_interface(
+            interface = self.model_factory.create_domain_interface(
                 self._random_name("interface")
             )
 
             # Add 1-5 signatures to each interface
             sig_count = random.randint(1, 5)
             for j in range(sig_count):
-                self._create_random_signature(provided_role)
+                self._create_random_signature(interface)
 
-            repository.contents.append(provided_role)
-            self.interfaces.append(provided_role)
+            repository.contents.append(interface)
+            self.interfaces.append(interface)
 
         # Create components
         for i in range(num_components):
@@ -156,13 +157,13 @@ class ModelGenerator:
             required_count = random.randint(0, 3)
             for j in range(required_count):
                 if self.interfaces:
-                    provided_role = random.choice(self.interfaces)
+                    # FIXME: Doesn't this mean we can have components that require and provide the same role?
+                    required_role = random.choice(self.interfaces)
                     role = self.model_factory.create_required_role(
-                        self._random_name("required"), provided_role
+                        self._random_name("required"), required_role
                     )
                     component.contents.append(role)
                     required_roles.append(role)
-            repository.contents.append(component)
 
             cpu_role = self.model_factory.create_required_role(
                 "cpu", self.std_defs.get_cpu_interface()
@@ -170,10 +171,9 @@ class ModelGenerator:
             hdd_role = self.model_factory.create_required_role(
                 "hdd", self.std_defs.get_hdd_interface()
             )
-            required_roles.append(cpu_role)
-            required_roles.append(hdd_role)
-            component.contents.append(cpu_role)
-            component.contents.append(hdd_role)
+            required_roles.extend([cpu_role, hdd_role])
+            component.contents.extend([cpu_role, hdd_role])
+            repository.contents.append(component)
 
             for provided_role in provided_roles:
                 for signatur in provided_role.type.contents:
@@ -188,20 +188,14 @@ class ModelGenerator:
                     coa = self.model_factory.create_seff_call_action(
                         required_role, required_signature
                     )
+                    # TODO: Refactor into function
                     for param in parameters:
+                        #                        print(f"{param.name} : {param.type.name}")
+
                         if param.type == self.primitive_types["Integer"]:
-                            # TODO: create random int resutl
                             result = self.model_factory.create_parameter_specification(
                                 specification=self.expr_factory.create_int_literal(
                                     random.randint(0, 100)
-                                )
-                            )
-                            coa.parameters.append(result)
-                        elif param.type == self.primitive_types["Double"]:
-                            # Create random double/float result
-                            result = self.model_factory.create_parameter_specification(
-                                specification=self.expr_factory.create_double_literal(
-                                    round(random.uniform(0.0, 100.0), 2)
                                 )
                             )
                             coa.parameters.append(result)
@@ -229,6 +223,15 @@ class ModelGenerator:
                                 )
                             )
                             coa.parameters.append(result)
+                        # FIXME: Current workaround because of type issue with CPU and HDD
+                        else:
+                            print(param.type.type)
+                            result = self.model_factory.create_parameter_specification(
+                                specification=self.expr_factory.create_double_literal(
+                                    round(random.uniform(0.0, 100.0), 2)
+                                )
+                            )
+                            coa.parameters.append(result)
                     seff.contents.append(coa)
                     component.contents.append(seff)
             self.components.append(component)
@@ -236,6 +239,7 @@ class ModelGenerator:
         return repository
 
     def generate_system(self, repository):
+        # TODO: Fix connector issues (Sebastian: du musst bei einer Komponente für alle RequiredRoles einen Connector zu Komponenten machen, die das Interface der Role providen)
         """Generate a random system with assembly contexts and connectors.
 
         Args:

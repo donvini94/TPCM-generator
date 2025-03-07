@@ -429,3 +429,6 @@ class _PCMStandardDefinitions:
 
     def get_hdd_provided_role(self):
         return self._elements["hdd_provided_role"]
+
+    def get_primitive_types(self):
+        return self._primitive_types
