@@ -225,7 +225,6 @@ class ModelGenerator:
                             coa.parameters.append(result)
                         # FIXME: Current workaround because of type issue with CPU and HDD
                         else:
-                            print(param.type.type)
                             result = self.model_factory.create_parameter_specification(
                                 specification=self.expr_factory.create_double_literal(
                                     round(random.uniform(0.0, 100.0), 2)
@@ -239,7 +238,6 @@ class ModelGenerator:
         return repository
 
     def generate_system(self, repository):
-        # TODO: Fix connector issues (Sebastian: du musst bei einer Komponente für alle RequiredRoles einen Connector zu Komponenten machen, die das Interface der Role providen)
         """Generate a random system with assembly contexts and connectors.
 
         Args:
@@ -275,32 +273,43 @@ class ModelGenerator:
         for assembly in self.assembly_contexts:
             component = assembly.component
             for role in component.contents:
-                if hasattr(role, "eClass") and role.eClass.name == "Role":
-                    if role.eClass.name.startswith("Provided"):
-                        provided_roles.append((assembly, role))
-                    elif role.eClass.name.startswith("Required"):
-                        required_roles.append((assembly, role))
+                if isinstance(role, self.model_factory.PCM.DomainInterfaceProvidedRole):
+                    provided_roles.append((assembly, role))
+                elif isinstance(role, self.model_factory.PCM.InterfaceRequiredRole):
+                    required_roles.append((assembly, role))
 
-        # Create connectors between assemblies
+        # Fix connector issues: For each component, create a connector for all its required roles
+        # that connects to components providing the matching interface
         for req_assembly, req_role in required_roles:
+            # Skip CPU and HDD roles as they're handled separately
+            if req_role.name in ["cpu", "hdd"]:
+                continue
+                
             # Find matching provided roles
             matching_provided = [
                 (prov_assembly, prov_role)
                 for prov_assembly, prov_role in provided_roles
                 if prov_role.type == req_role.type and prov_assembly != req_assembly
             ]
-
+            
             if matching_provided:
                 # Randomly select a provider
                 prov_assembly, prov_role = random.choice(matching_provided)
 
-                # Create connector
+                # Create connector with explicit from and to values
                 connector = self.model_factory.create_connector(
                     self._random_name("connector"),
-                    req_assembly,
-                    prov_assembly,
-                    req_role,
+                    from_context=req_assembly,
+                    to_context=prov_assembly,
+                    requiring_role=req_role,
                 )
+                
+                # Explicitly verify that the connector has from and to values set
+                if not hasattr(connector, '_from') or not connector._from:
+                    connector._from = req_assembly
+                if not hasattr(connector, 'to') or not connector.to:
+                    connector.to = prov_assembly
+                
                 system.contents.append(connector)
 
         # Create system provided roles for some of the provided interfaces
@@ -496,10 +505,10 @@ class ModelGenerator:
         repository = self.generate_repository()
         system = self.generate_system(repository)
         allocation = self.generate_allocation(system)
-        usage = self.generate_usage_model(system)
+        # usage = self.generate_usage_model(system)
 
         # Add elements to model
-        model.fragments.extend([repository, system, allocation, usage])
+        model.fragments.extend([repository, system, allocation])
 
         # Save model
         xml_filename = f"{model_name}.xml"

@@ -226,7 +226,7 @@ class ModelFactory:
         assembly.component = component
         return assembly
 
-    def create_connector(self, name, from_context, to_context, requiring_role):
+    def create_connector(self, name, from_context, to_context, requiring_role=None):
         """Create a connector between assembly contexts.
 
         Args:
@@ -242,7 +242,8 @@ class ModelFactory:
         # For Python keywords, PyEcore uses _keyword naming convention
         connector._from = from_context
         connector.to = to_context
-        connector.requiringRole = requiring_role
+        if requiring_role:
+            connector.requiringRole = requiring_role
         return connector
 
     def create_system_provided_role(self, name, interface, assembly_context):
