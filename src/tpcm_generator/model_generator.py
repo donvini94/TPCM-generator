@@ -237,7 +237,7 @@ class ModelGenerator:
 
         return repository
 
-    def generate_system(self, repository):
+    def generate_system(self):
         """Generate a random system with assembly contexts and connectors.
 
         Args:
@@ -278,24 +278,22 @@ class ModelGenerator:
                 elif isinstance(role, self.model_factory.PCM.InterfaceRequiredRole):
                     required_roles.append((assembly, role))
 
+        # TODO: Fix connector issues (Sebastian: du musst bei einer Komponente für alle RequiredRoles einen Connector zu Komponenten machen, die das Interface der Role providen)
         # Fix connector issues: For each component, create a connector for all its required roles
         # that connects to components providing the matching interface
         for req_assembly, req_role in required_roles:
             # Skip CPU and HDD roles as they're handled separately
             if req_role.name in ["cpu", "hdd"]:
                 continue
-                
+
             # Find matching provided roles
             matching_provided = [
                 (prov_assembly, prov_role)
                 for prov_assembly, prov_role in provided_roles
                 if prov_role.type == req_role.type and prov_assembly != req_assembly
             ]
-            
-            if matching_provided:
-                # Randomly select a provider
-                prov_assembly, prov_role = random.choice(matching_provided)
 
+            for prov_assembly, prov_role in matching_provided:
                 # Create connector with explicit from and to values
                 connector = self.model_factory.create_connector(
                     self._random_name("connector"),
@@ -303,13 +301,6 @@ class ModelGenerator:
                     to_context=prov_assembly,
                     requiring_role=req_role,
                 )
-                
-                # Explicitly verify that the connector has from and to values set
-                if not hasattr(connector, '_from') or not connector._from:
-                    connector._from = req_assembly
-                if not hasattr(connector, 'to') or not connector.to:
-                    connector.to = prov_assembly
-                
                 system.contents.append(connector)
 
         # Create system provided roles for some of the provided interfaces
@@ -405,9 +396,11 @@ class ModelGenerator:
         system_provided_roles = [
             content
             for content in system.contents
-            if hasattr(content, "eClass")
-            and content.eClass.name == "SystemProvidedRole"
+            if isinstance(content, self.model_factory.PCM.SystemProvidedRole)
         ]
+        print("System Provided roles")
+        for role in system_provided_roles:
+            print(role.name)
 
         if not system_provided_roles:
             return usage
@@ -420,12 +413,14 @@ class ModelGenerator:
         # Create workload (randomly choose between open and closed workload)
         if random.choice([True, False]):
             # Open workload with exponential distribution
-            inter_arrival_time = f"Exp({random.uniform(0.01, 0.1):.2f})"
+            rate = random.uniform(0.01, 0.1)
+            inter_arrival_time = self.expr_factory.create_exp_distribution(rate)
             workload = self.model_factory.create_open_workload(inter_arrival_time)
         else:
             # Closed workload
             num_users = random.randint(1, 20)
-            think_time = f"Exp({random.uniform(0.5, 5.0):.2f})"
+            rate = random.uniform(0.5, 5.0)
+            think_time = self.expr_factory.create_exp_distribution(rate)
             workload = self.model_factory.create_closed_workload(num_users, think_time)
 
         scenario.workload = workload
@@ -456,21 +451,27 @@ class ModelGenerator:
                                 value = random.randint(1, 100)
                                 params.append(
                                     self.model_factory.create_parameter_specification(
-                                        str(value)
+                                        specification=self.expr_factory.create_int_literal(
+                                            value
+                                        )
                                     )
                                 )
                             elif param.type.type.name == "DOUBLE":
                                 value = random.uniform(1.0, 100.0)
                                 params.append(
                                     self.model_factory.create_parameter_specification(
-                                        str(value)
+                                        specification=self.expr_factory.create_double_literal(
+                                            value
+                                        )
                                     )
                                 )
                             else:
                                 # Default for other types
                                 params.append(
                                     self.model_factory.create_parameter_specification(
-                                        "1"
+                                        specification=self.expr_factory.create_string_literal(
+                                            "1"
+                                        )
                                     )
                                 )
 
@@ -503,7 +504,7 @@ class ModelGenerator:
         self.resource_env.add_to_model(model)
         # Generate all model elements
         repository = self.generate_repository()
-        system = self.generate_system(repository)
+        system = self.generate_system()
         allocation = self.generate_allocation(system)
         # usage = self.generate_usage_model(system)
 
