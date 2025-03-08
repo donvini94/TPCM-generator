@@ -1,5 +1,5 @@
 from pyecore.resources import ResourceSet, URI
-from pyecore.utils import DynamicEPackage
+from pyecore.utils import DynamicEPackage, alias
 from .utils import setup_metamodel
 
 
@@ -228,22 +228,36 @@ class ModelFactory:
 
     def create_connector(self, name, from_context, to_context, requiring_role=None):
         """Create a connector between assembly contexts.
-
         Args:
             name: Name of the connector
             from_context: Source assembly context
             to_context: Target assembly context
             requiring_role: The required role being connected
-
         Returns:
             A new Connector instance
         """
         connector = self.PCM.Connector(name=name)
-        # For Python keywords, PyEcore uses _keyword naming convention
-        connector._from = from_context
+
+        # For dynamic models, you need to establish the alias if it hasn't been done yet
+        connector_class = connector.eClass
+
+        # Find the 'from' feature (PyEcore should handle this internally as '_from')
+        from_feature = next(
+            (f for f in connector_class.eStructuralFeatures if f.name == "from"), None
+        )
+
+        if from_feature and not hasattr(connector_class, "alias_set"):
+            # Create an alias 'from_context' for the 'from' feature
+            alias("from_context", from_feature)
+            connector_class.alias_set = True
+
+        # Now use the alias to set the value
+        connector.from_context = from_context
         connector.to = to_context
+
         if requiring_role:
             connector.requiringRole = requiring_role
+
         return connector
 
     def create_system_provided_role(self, name, interface, assembly_context):
