@@ -226,7 +226,9 @@ class ModelFactory:
         assembly.component = component
         return assembly
 
-    def create_connector(self, name, from_context, to_context, requiring_role=None):
+    def create_connector(
+        self, name=None, from_context=None, to_context=None, requiring_role=None
+    ):
         """Create a connector between assembly contexts.
         Args:
             name: Name of the connector
@@ -236,7 +238,9 @@ class ModelFactory:
         Returns:
             A new Connector instance
         """
-        connector = self.PCM.Connector(name=name)
+        connector = self.PCM.Connector()
+        if name:
+            connector.name = name
 
         # For dynamic models, you need to establish the alias if it hasn't been done yet
         connector_class = connector.eClass

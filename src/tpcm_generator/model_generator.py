@@ -188,8 +188,6 @@ class ModelGenerator:
                     )
                     # TODO: Refactor into function
                     for param in parameters:
-                        #                        print(f"{param.name} : {param.type.name}")
-
                         if param.type == self.primitive_types["Integer"]:
                             result = self.model_factory.create_parameter_specification(
                                 specification=self.expr_factory.create_int_literal(
@@ -277,8 +275,6 @@ class ModelGenerator:
                     required_roles.append((assembly, role))
 
         # TODO: Fix connector issues (Sebastian: du musst bei einer Komponente für alle RequiredRoles einen Connector zu Komponenten machen, die das Interface der Role providen)
-        # Fix connector issues: For each component, create a connector for all its required roles
-        # that connects to components providing the matching interface
         for req_assembly, req_role in required_roles:
             # Skip CPU and HDD roles as they're handled separately
             if req_role.name in ["cpu", "hdd"]:
@@ -292,9 +288,7 @@ class ModelGenerator:
             ]
 
             for prov_assembly, prov_role in matching_provided:
-                # Create connector with explicit from and to values
                 connector = self.model_factory.create_connector(
-                    self._random_name("connector"),
                     from_context=req_assembly,
                     to_context=prov_assembly,
                     requiring_role=req_role,
