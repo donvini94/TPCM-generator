@@ -142,8 +142,7 @@ class ModelGenerator:
             provided_roles = []
             required_roles = []
 
-            # Each component provides 0-2 interfaces
-            provided_count = random.randint(0, 2)
+            provided_count = random.randint(1, 3)
             for j in range(provided_count):
                 if self.interfaces:
                     provided_role = random.choice(self.interfaces)
@@ -153,8 +152,7 @@ class ModelGenerator:
                     component.contents.append(role)
                     provided_roles.append(role)
 
-            # Each component requires 0-3 interfaces
-            required_count = random.randint(0, 3)
+            required_count = random.randint(1, 3)
             for j in range(required_count):
                 if self.interfaces:
                     # FIXME: Doesn't this mean we can have components that require and provide the same role?
