@@ -1,11 +1,56 @@
 import random
 import string
+import copy
 from .model_factory import ModelFactory
 from .expression_factory import ExpressionFactory
 from .utils import setup_metamodel, save_model
 from .std_definitions import get_std_definitions
 from .resource_environment import get_resource_environment
 
+class UniqueRandomInterfaceSampler:
+    def __init__(self, data):
+        self.data = data
+        self.remaining = list(data)
+        self.remaining_provided = list(data)
+    
+    def sample(self, count_provided, count_required):
+        if count_provided + count_required > len(self.data):
+            raise ValueError("2 * n cannot be greater than the size of the data set")
+
+        if len(self.remaining_provided) < count_provided:
+            self.remaining_provided = list(self.data)
+        
+        list_provided = random.sample(self.remaining_provided, count_provided)
+        self.remaining_provided = list(set(self.remaining_provided) - set(list_provided))
+        self.remaining = list(set(self.remaining) - set(list_provided))
+        
+        if len(self.remaining) < count_required:
+            self.remaining = list(set(self.data) - set(list_provided))
+
+        list_required = random.sample(self.remaining, count_required)
+        self.remaining = list(set(self.remaining) - set(list_required))
+
+        return list_provided, list_required
+
+class UniqueRandomSampler:
+    def __init__(self, data):
+        self.data = data
+        self.remaining = list(data)
+    
+    def sample(self):
+        if not self.remaining:
+            self.remaining = list(self.data)
+        
+        choice = random.choice(self.remaining)
+        self.remaining.remove(choice)
+        return choice
+
+def add_to_dictionary(key, value, dict):
+    if key in dict:
+        dict[key].append(value)
+    else:
+        dict[key] = []
+        dict[key].append(value)
 
 class ModelGenerator:
     """Generator for PCM models, both minimal working examples and random models."""
@@ -134,29 +179,38 @@ class ModelGenerator:
             repository.contents.append(interface)
             self.interfaces.append(interface)
 
+        interface_provider = UniqueRandomInterfaceSampler(self.interfaces)
+
         # Create components
         for i in range(num_components):
+
+            provided_interfaces_count = random.randint(1, round(len(self.interfaces)/2))
+            required_interfaces_count = random.randint(1, round(len(self.interfaces)/2))
+
+            provided_interfaces, required_interfaces = interface_provider.sample(provided_interfaces_count, required_interfaces_count)
+            provided_component_interface_provider = UniqueRandomSampler(provided_interfaces)
+            required_component_interface_provider = UniqueRandomSampler(required_interfaces)
+
             component = self.model_factory.create_component(
                 self._random_name("component")
             )
             provided_roles = []
             required_roles = []
 
-            provided_count = random.randint(1, 3)
-            for j in range(provided_count):
+            for j in range(len(provided_interfaces)):
                 if self.interfaces:
-                    provided_role = random.choice(self.interfaces)
+                    provided_role = provided_component_interface_provider.sample()
                     role = self.model_factory.create_provided_role(
                         self._random_name("provided"), provided_role
                     )
                     component.contents.append(role)
                     provided_roles.append(role)
 
-            required_count = random.randint(1, 3)
-            for j in range(required_count):
+            for j in range(len(required_interfaces)):
                 if self.interfaces:
                     # FIXME: Doesn't this mean we can have components that require and provide the same role?
-                    required_role = random.choice(self.interfaces)
+                    # Sebastian: fixed by using the UniqueRandomSampler
+                    required_role = required_component_interface_provider.sample()
                     role = self.model_factory.create_required_role(
                         self._random_name("required"), required_role
                     )
@@ -238,6 +292,7 @@ class ModelGenerator:
 
         Args:
             repository: Repository with components and interfaces
+            Sebastian: Ähm?!
 
         Returns:
             Generated system
@@ -250,18 +305,22 @@ class ModelGenerator:
         if not available_components:
             return system
 
+        # Sebastian: eine Komponente im Repository, die nicht im System instanziiert wird, ist nicht wirklich sinnvoll
         # Select random components to include in the system
         selected_components = []
         num_assemblies = min(random.randint(2, 5), len(available_components))
         selected_components = random.sample(available_components, num_assemblies)
 
         # Create assembly contexts for each selected component
-        for component in selected_components:
+        for component in available_components:
             assembly = self.model_factory.create_assembly_context(
                 self._random_name("assembly"), component
             )
             system.contents.append(assembly)
             self.assembly_contexts.append(assembly)
+
+        # Map interfaces to assemblies of components that provide these interfaces
+        interface_to_providing_component_map = {}
 
         # Find provided and required roles from the assemblies
         provided_roles = []
@@ -270,30 +329,23 @@ class ModelGenerator:
             component = assembly.component
             for role in component.contents:
                 if isinstance(role, self.model_factory.PCM.DomainInterfaceProvidedRole):
+                    add_to_dictionary(role.type, assembly, interface_to_providing_component_map)
                     provided_roles.append((assembly, role))
                 elif isinstance(role, self.model_factory.PCM.InterfaceRequiredRole):
                     required_roles.append((assembly, role))
 
-        # TODO: Fix connector issues (Sebastian: du musst bei einer Komponente für alle RequiredRoles einen Connector zu Komponenten machen, die das Interface der Role providen)
         for req_assembly, req_role in required_roles:
             # Skip CPU and HDD roles as they're handled separately
             if req_role.name in ["cpu", "hdd"]:
                 continue
 
-            # Find matching provided roles
-            matching_provided = [
-                (prov_assembly, prov_role)
-                for prov_assembly, prov_role in provided_roles
-                if prov_role.type == req_role.type and prov_assembly != req_assembly
-            ]
-
-            for prov_assembly, prov_role in matching_provided:
-                connector = self.model_factory.create_connector(
-                    from_context=req_assembly,
-                    to_context=prov_assembly,
-                    requiring_role=req_role,
+            connector = self.model_factory.create_connector(
+                    to_context=req_assembly,
+                    from_context=random.choice(interface_to_providing_component_map[req_role.type]),
+                    requiring_role=req_role
                 )
-                system.contents.append(connector)
+
+            system.contents.append(connector)
 
         # Create system provided roles for some of the provided interfaces
         # (exposing some component interfaces to the outside world)

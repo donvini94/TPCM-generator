@@ -1,0 +1,346 @@
+repository PrimitiveTypes  {
+    datatype Integer INT 
+    datatype Double DOUBLE 
+    failure CPUFailure 
+}
+resourcetypes  {
+    interface ICPU  {
+        op process ( amount PrimitiveTypes::Double ) 
+    }
+    interface IHDD  {
+        op read ( amount PrimitiveTypes::Double ) 
+        op write ( amount PrimitiveTypes::Double ) 
+    }
+    type SchedulingPolicy 
+    entity FirstComeFirstServe SchedulingPolicy 
+    entity ProcessorSharing SchedulingPolicy 
+    entity Delay SchedulingPolicy 
+    processing CPUResource  {
+        provides ICPU 
+        raises PrimitiveTypes::CPUFailure 
+        property processingRate PrimitiveTypes::Double 
+        property schedulingPolicy SchedulingPolicy 
+    }
+    processing HDDResource  {
+        provides IHDD 
+        property processingRate PrimitiveTypes::Double 
+        property schedulingPolicy SchedulingPolicy 
+    }
+    processing Delay  {
+        property processingRate PrimitiveTypes::Double 
+        property schedulingPolicy SchedulingPolicy 
+    }
+    link Ethernet  {
+        property throughput PrimitiveTypes::Double 
+        property latency SchedulingPolicy 
+    }
+    internal PassiveResource  {
+        op acquire 
+        op release 
+        property capacity PrimitiveTypes::Integer 
+    }
+}
+mapping  {
+    FirstComeFirstServe -> "pathmap://PCM_MODELS/Palladio.resourcetype#FCFS" 
+    ProcessorSharing -> "pathmap://PCM_MODELS/Palladio.resourcetype#ProcessorSharing" 
+    Delay -> "pathmap://PCM_MODELS/Palladio.resourcetype#Delay" 
+    ICPU -> "pathmap://PCM_MODELS/Palladio.resourcetype#_tw_Q8E5CEeCUKeckjJ_n-w" 
+    ICPU::process -> "pathmap://PCM_MODELS/Palladio.resourcetype#_wF22kE5CEeCUKeckjJ_n-w" 
+    IHDD::read -> "pathmap://PCM_MODELS/Palladio.resourcetype#_ygMyEE5CEeCUKeckjJ_n-w" 
+    IHDD::write -> "pathmap://PCM_MODELS/Palladio.resourcetype#_zUFtIE5CEeCUKeckjJ_n-w" 
+    IHDD -> "pathmap://PCM_MODELS/Palladio.resourcetype#_xXv8QE5CEeCUKeckjJ_n-w" 
+    Ethernet -> "pathmap://PCM_MODELS/Palladio.resourcetype#_o3sScH2AEdyH8uerKnHYug" 
+    CPUResource -> "pathmap://PCM_MODELS/Palladio.resourcetype#_oro4gG3fEdy4YaaT-RYrLQ" 
+    HDDResource -> "pathmap://PCM_MODELS/Palladio.resourcetype#_BIjHoQ3KEdyouMqirZIhzQ" 
+}
+resourceenvironment Environment  {
+    container ApplicationServer  {
+        processing CPU CPUResource ( processingRate : « 1.0E9 » schedulingPolicy : ProcessorSharing ) 
+        processing HDD HDDResource ( processingRate : « 5.0E7 » schedulingPolicy : FirstComeFirstServe ) 
+    }
+    container DatabaseServer  {
+        processing CPU CPUResource ( processingRate : « 1.0E9 » schedulingPolicy : ProcessorSharing ) 
+        processing HDD HDDResource ( processingRate : « 6.0E8 » schedulingPolicy : FirstComeFirstServe ) 
+    }
+    link LAN Ethernet ( latency : « 0.07 » throughput : « 6250000.0 » ) ApplicationServer , DatabaseServer 
+}
+repository repository_KDGQH  {
+    datatype Integer INT 
+    datatype String STRING 
+    datatype Boolean BOOL 
+    datatype Double DOUBLE 
+    interface interface_NWRDV  {
+        op operation_IUSUY ( param0 Double ) 
+        op operation_SUTVO ( param0 String ) 
+        op operation_GYGNI ( param0 Double ) 
+        op operation_ZKNHO ( param0 Boolean ) 
+    }
+    interface interface_CGFWB  {
+        op operation_AVNPM 
+        op operation_OQPVQ ( param0 Double , param1 Double , param2 String ) 
+        op operation_AJKEP ( param0 Boolean , param1 String ) 
+        op operation_BSNKC 
+        op operation_KHKFK ( param0 Integer , param1 Boolean , param2 Integer ) 
+    }
+    interface interface_AEQIK  {
+        op operation_DVJQK ( param0 String , param1 Integer ) 
+        op operation_MGACD 
+        op operation_SGQDH 
+    }
+    interface interface_KCOJI  {
+        op operation_HGSDE ( param0 Boolean , param1 Double ) 
+    }
+    interface interface_BQUWM  {
+        op operation_OGALG ( param0 Boolean , param1 Boolean ) 
+    }
+    component component_JLKXH  {
+        provides provided_GSINH interface_NWRDV 
+        provides provided_JISJF interface_KCOJI 
+        requires required_AILFP interface_AEQIK 
+        requires required_JZWSF interface_CGFWB 
+        requires cpu ICPU 
+        requires hdd IHDD 
+        seff provided_GSINH . operation_IUSUY  {
+             hdd . write ( « 83.51 » ) 
+        }
+        seff provided_GSINH . operation_SUTVO  {
+             cpu . process ( « 34.38 » ) 
+        }
+        seff provided_GSINH . operation_GYGNI  {
+             required_AILFP . operation_SGQDH 
+        }
+        seff provided_GSINH . operation_ZKNHO  {
+             hdd . write ( « 25.66 » ) 
+        }
+        seff provided_JISJF . operation_HGSDE  {
+             cpu . process ( « 9.09 » ) 
+        }
+    }
+    component component_XVRUP  {
+        provides provided_CCKNT interface_CGFWB 
+        requires required_YYYOP interface_NWRDV 
+        requires required_KHPDQ interface_AEQIK 
+        requires cpu ICPU 
+        requires hdd IHDD 
+        seff provided_CCKNT . operation_AVNPM  {
+             required_KHPDQ . operation_DVJQK ( « "bvfPPwces" » , « 20 » ) 
+        }
+        seff provided_CCKNT . operation_OQPVQ  {
+             hdd . write ( « 51.17 » ) 
+        }
+        seff provided_CCKNT . operation_AJKEP  {
+             hdd . write ( « 95.98 » ) 
+        }
+        seff provided_CCKNT . operation_BSNKC  {
+             required_KHPDQ . operation_MGACD 
+        }
+        seff provided_CCKNT . operation_KHKFK  {
+             hdd . read ( « 69.33 » ) 
+        }
+    }
+    component component_XKIKZ  {
+        provides provided_HOAGK interface_BQUWM 
+        provides provided_EFYWP interface_AEQIK 
+        requires required_MRKBB interface_CGFWB 
+        requires required_LNYDY interface_NWRDV 
+        requires cpu ICPU 
+        requires hdd IHDD 
+        seff provided_HOAGK . operation_OGALG  {
+             required_LNYDY . operation_IUSUY ( « 28.19 » ) 
+        }
+        seff provided_EFYWP . operation_DVJQK  {
+             hdd . read ( « 55.53 » ) 
+        }
+        seff provided_EFYWP . operation_MGACD  {
+             hdd . write ( « 92.62 » ) 
+        }
+        seff provided_EFYWP . operation_SGQDH  {
+             required_MRKBB . operation_KHKFK ( « 9 » , « false » , « 37 » ) 
+        }
+    }
+    component component_GUTFN  {
+        provides provided_KWUCL interface_AEQIK 
+        provides provided_XGCNX interface_NWRDV 
+        requires required_USCJZ interface_KCOJI 
+        requires required_UFDSG interface_BQUWM 
+        requires cpu ICPU 
+        requires hdd IHDD 
+        seff provided_KWUCL . operation_DVJQK  {
+             hdd . write ( « 79.44 » ) 
+        }
+        seff provided_KWUCL . operation_MGACD  {
+             required_UFDSG . operation_OGALG ( « true » , « true » ) 
+        }
+        seff provided_KWUCL . operation_SGQDH  {
+             cpu . process ( « 87.7 » ) 
+        }
+        seff provided_XGCNX . operation_IUSUY  {
+             hdd . read ( « 60.5 » ) 
+        }
+        seff provided_XGCNX . operation_SUTVO  {
+             hdd . read ( « 6.7 » ) 
+        }
+        seff provided_XGCNX . operation_GYGNI  {
+             required_USCJZ . operation_HGSDE ( « false » , « 37.02 » ) 
+        }
+        seff provided_XGCNX . operation_ZKNHO  {
+             hdd . read ( « 90.31 » ) 
+        }
+    }
+    component component_MAZSQ  {
+        provides provided_DKJBG interface_CGFWB 
+        requires required_PQCWK interface_BQUWM 
+        requires required_RNGHV interface_KCOJI 
+        requires cpu ICPU 
+        requires hdd IHDD 
+        seff provided_DKJBG . operation_AVNPM  {
+             hdd . write ( « 73.59 » ) 
+        }
+        seff provided_DKJBG . operation_OQPVQ  {
+             hdd . read ( « 95.35 » ) 
+        }
+        seff provided_DKJBG . operation_AJKEP  {
+             required_RNGHV . operation_HGSDE ( « true » , « 43.82 » ) 
+        }
+        seff provided_DKJBG . operation_BSNKC  {
+             required_RNGHV . operation_HGSDE ( « true » , « 32.66 » ) 
+        }
+        seff provided_DKJBG . operation_KHKFK  {
+             cpu . process ( « 82.84 » ) 
+        }
+    }
+    component component_VLBLF  {
+        provides provided_FBAXZ interface_BQUWM 
+        requires required_AITNG interface_AEQIK 
+        requires required_XLSRF interface_NWRDV 
+        requires cpu ICPU 
+        requires hdd IHDD 
+        seff provided_FBAXZ . operation_OGALG  {
+             required_AITNG . operation_MGACD 
+        }
+    }
+    component component_NWEGI  {
+        provides provided_DXLNZ interface_BQUWM 
+        provides provided_IBYNY interface_CGFWB 
+        requires required_KCXBZ interface_AEQIK 
+        requires required_BGEPP interface_KCOJI 
+        requires cpu ICPU 
+        requires hdd IHDD 
+        seff provided_DXLNZ . operation_OGALG  {
+             cpu . process ( « 63.64 » ) 
+        }
+        seff provided_IBYNY . operation_AVNPM  {
+             hdd . write ( « 65.6 » ) 
+        }
+        seff provided_IBYNY . operation_OQPVQ  {
+             hdd . write ( « 39.11 » ) 
+        }
+        seff provided_IBYNY . operation_AJKEP  {
+             required_KCXBZ . operation_DVJQK ( « "FA4axTjb050hB4U" » , « 11 » ) 
+        }
+        seff provided_IBYNY . operation_BSNKC  {
+             cpu . process ( « 32.3 » ) 
+        }
+        seff provided_IBYNY . operation_KHKFK  {
+             cpu . process ( « 29.41 » ) 
+        }
+    }
+    component component_YBUDO  {
+        provides provided_RMJIQ interface_NWRDV 
+        requires required_WZCLV interface_AEQIK 
+        requires required_URCCL interface_BQUWM 
+        requires cpu ICPU 
+        requires hdd IHDD 
+        seff provided_RMJIQ . operation_IUSUY  {
+             cpu . process ( « 68.16 » ) 
+        }
+        seff provided_RMJIQ . operation_SUTVO  {
+             cpu . process ( « 94.2 » ) 
+        }
+        seff provided_RMJIQ . operation_GYGNI  {
+             cpu . process ( « 84.56 » ) 
+        }
+        seff provided_RMJIQ . operation_ZKNHO  {
+             cpu . process ( « 23.11 » ) 
+        }
+    }
+    component component_ZMCLO  {
+        provides provided_WOGGI interface_AEQIK 
+        provides provided_FRNMY interface_KCOJI 
+        requires required_JTOCX interface_CGFWB 
+        requires required_MIAMU interface_BQUWM 
+        requires cpu ICPU 
+        requires hdd IHDD 
+        seff provided_WOGGI . operation_DVJQK  {
+             required_MIAMU . operation_OGALG ( « false » , « false » ) 
+        }
+        seff provided_WOGGI . operation_MGACD  {
+             cpu . process ( « 73.45 » ) 
+        }
+        seff provided_WOGGI . operation_SGQDH  {
+             cpu . process ( « 82.18 » ) 
+        }
+        seff provided_FRNMY . operation_HGSDE  {
+             cpu . process ( « 60.23 » ) 
+        }
+    }
+    component component_KNVGO  {
+        provides provided_XOVUR interface_CGFWB 
+        requires required_YMPYC interface_KCOJI 
+        requires required_PXRQX interface_AEQIK 
+        requires cpu ICPU 
+        requires hdd IHDD 
+        seff provided_XOVUR . operation_AVNPM  {
+             hdd . write ( « 57.27 » ) 
+        }
+        seff provided_XOVUR . operation_OQPVQ  {
+             cpu . process ( « 99.82 » ) 
+        }
+        seff provided_XOVUR . operation_AJKEP  {
+             cpu . process ( « 33.91 » ) 
+        }
+        seff provided_XOVUR . operation_BSNKC  {
+             cpu . process ( « 51.91 » ) 
+        }
+        seff provided_XOVUR . operation_KHKFK  {
+             hdd . write ( « 93.05 » ) 
+        }
+    }
+}
+system system_JTAPN  {
+    assembly assembly_QGCZN repository_KDGQH::component_JLKXH 
+    assembly assembly_TPWIR repository_KDGQH::component_XVRUP 
+    assembly assembly_BTAJK repository_KDGQH::component_XKIKZ 
+    assembly assembly_MOZOL repository_KDGQH::component_GUTFN 
+    assembly assembly_LQEVN repository_KDGQH::component_MAZSQ 
+    assembly assembly_LSRTK repository_KDGQH::component_VLBLF 
+    assembly assembly_OJJPM repository_KDGQH::component_NWEGI 
+    assembly assembly_PWLET repository_KDGQH::component_YBUDO 
+    assembly assembly_IKFPI repository_KDGQH::component_ZMCLO 
+    assembly assembly_NVDVL repository_KDGQH::component_KNVGO 
+    assembly_IKFPI -> assembly_QGCZN . required_AILFP 
+    assembly_TPWIR -> assembly_QGCZN . required_JZWSF 
+    assembly_QGCZN -> assembly_TPWIR . required_YYYOP 
+    assembly_BTAJK -> assembly_TPWIR . required_KHPDQ 
+    assembly_LQEVN -> assembly_BTAJK . required_MRKBB 
+    assembly_MOZOL -> assembly_BTAJK . required_LNYDY 
+    assembly_IKFPI -> assembly_MOZOL . required_USCJZ 
+    assembly_OJJPM -> assembly_MOZOL . required_UFDSG 
+    assembly_OJJPM -> assembly_LQEVN . required_PQCWK 
+    assembly_IKFPI -> assembly_LQEVN . required_RNGHV 
+    assembly_IKFPI -> assembly_LSRTK . required_AITNG 
+    assembly_QGCZN -> assembly_LSRTK . required_XLSRF 
+    assembly_MOZOL -> assembly_OJJPM . required_KCXBZ 
+    assembly_IKFPI -> assembly_OJJPM . required_BGEPP 
+    assembly_IKFPI -> assembly_PWLET . required_WZCLV 
+    assembly_OJJPM -> assembly_PWLET . required_URCCL 
+    assembly_LQEVN -> assembly_IKFPI . required_JTOCX 
+    assembly_OJJPM -> assembly_IKFPI . required_MIAMU 
+    assembly_QGCZN -> assembly_NVDVL . required_YMPYC 
+    assembly_IKFPI -> assembly_NVDVL . required_PXRQX 
+    provides system_provided_VZTXR  repository_KDGQH::interface_CGFWB -> assembly_OJJPM 
+    provides system_provided_XHHFC  repository_KDGQH::interface_KCOJI -> assembly_IKFPI 
+}
+allocation allocation_WDKFG  {
+    alloc alloc_ERLNC ( system_JTAPN::assembly_IKFPI , system_JTAPN::assembly_LSRTK , system_JTAPN::assembly_TPWIR , system_JTAPN::assembly_BTAJK , system_JTAPN::assembly_MOZOL , system_JTAPN::assembly_QGCZN , system_JTAPN::assembly_OJJPM , system_JTAPN::assembly_NVDVL , system_JTAPN::assembly_PWLET ,  system_JTAPN::assembly_LQEVN -> Environment::ApplicationServer ) 
+}
