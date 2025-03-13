@@ -13,7 +13,7 @@
           in
           pkgs.mkShell {
             buildInputs = [
-              pkgs.jdk17
+              pkgs.jdk21
               pkgs.python312
               pkgs.poetry
             ];
