@@ -40,3 +40,9 @@ python -m unittest tests.test_model_factory.test_create_minimal_repository
 
 ## Development
 This project uses PyEcore to work with Ecore metamodels and generate models based on them. Models are exported as XML files that can be used with Palladio Component Model tooling.
+
+
+## Important information:
+- SaveAs.jar is fixed and correct. It is used to convert xml models to .tpcm files. It does not need to be changed. If a correct .xml is provided, the model will be converted correctly. Otherwise the input model is wrong. 
+- The .ecore metamodel files are fixed and unchangeable. 
+- Do not try to setup virtual environments or install dependencies with pip. If you have dependency issues, remember to use nix develop to drop into a dev shell with the installed dependencies. 

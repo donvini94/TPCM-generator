@@ -442,9 +442,6 @@ class ModelGenerator:
             for content in system.contents
             if isinstance(content, self.model_factory.PCM.SystemProvidedRole)
         ]
-        print("System Provided roles")
-        for role in system_provided_roles:
-            print(role.name)
 
         if not system_provided_roles:
             return usage
@@ -458,13 +455,14 @@ class ModelGenerator:
         if random.choice([True, False]):
             # Open workload with exponential distribution
             rate = random.uniform(0.01, 0.1)
-            inter_arrival_time = self.expr_factory.create_exp_distribution(rate)
+            # Create a simple double literal directly
+            # We're keeping it simple to avoid the complex probability function issue
+            inter_arrival_time = self.expr_factory.create_double_literal(rate)
             workload = self.model_factory.create_open_workload(inter_arrival_time)
         else:
             # Closed workload
             num_users = random.randint(1, 20)
-            rate = random.uniform(0.5, 5.0)
-            think_time = self.expr_factory.create_exp_distribution(rate)
+            think_time = self.expr_factory.create_double_literal(random.uniform(0.5, 5.0))
             workload = self.model_factory.create_closed_workload(num_users, think_time)
 
         scenario.workload = workload
@@ -495,27 +493,27 @@ class ModelGenerator:
                                 value = random.randint(1, 100)
                                 params.append(
                                     self.model_factory.create_parameter_specification(
-                                        specification=self.expr_factory.create_int_literal(
-                                            value
-                                        )
+                                        specification=self.expr_factory.create_int_literal(value)
                                     )
                                 )
                             elif param.type.type.name == "DOUBLE":
-                                value = random.uniform(1.0, 100.0)
+                                value = round(random.uniform(1.0, 100.0), 2)
                                 params.append(
                                     self.model_factory.create_parameter_specification(
-                                        specification=self.expr_factory.create_double_literal(
-                                            value
-                                        )
+                                        specification=self.expr_factory.create_double_literal(value)
+                                    )
+                                )
+                            elif param.type.type.name == "BOOL":
+                                params.append(
+                                    self.model_factory.create_parameter_specification(
+                                        specification=self.expr_factory.create_bool_literal(random.choice([True, False]))
                                     )
                                 )
                             else:
-                                # Default for other types
+                                # Default for STRING and other types
                                 params.append(
                                     self.model_factory.create_parameter_specification(
-                                        specification=self.expr_factory.create_string_literal(
-                                            "1"
-                                        )
+                                        specification=self.expr_factory.create_string_literal("1")
                                     )
                                 )
 
