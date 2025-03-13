@@ -7,23 +7,26 @@ from .utils import setup_metamodel, save_model
 from .std_definitions import get_std_definitions
 from .resource_environment import get_resource_environment
 
+
 class UniqueRandomInterfaceSampler:
     def __init__(self, data):
         self.data = data
         self.remaining = list(data)
         self.remaining_provided = list(data)
-    
+
     def sample(self, count_provided, count_required):
         if count_provided + count_required > len(self.data):
             raise ValueError("2 * n cannot be greater than the size of the data set")
 
         if len(self.remaining_provided) < count_provided:
             self.remaining_provided = list(self.data)
-        
+
         list_provided = random.sample(self.remaining_provided, count_provided)
-        self.remaining_provided = list(set(self.remaining_provided) - set(list_provided))
+        self.remaining_provided = list(
+            set(self.remaining_provided) - set(list_provided)
+        )
         self.remaining = list(set(self.remaining) - set(list_provided))
-        
+
         if len(self.remaining) < count_required:
             self.remaining = list(set(self.data) - set(list_provided))
 
@@ -32,18 +35,20 @@ class UniqueRandomInterfaceSampler:
 
         return list_provided, list_required
 
+
 class UniqueRandomSampler:
     def __init__(self, data):
         self.data = data
         self.remaining = list(data)
-    
+
     def sample(self):
         if not self.remaining:
             self.remaining = list(self.data)
-        
+
         choice = random.choice(self.remaining)
         self.remaining.remove(choice)
         return choice
+
 
 def add_to_dictionary(key, value, dict):
     if key in dict:
@@ -51,6 +56,7 @@ def add_to_dictionary(key, value, dict):
     else:
         dict[key] = []
         dict[key].append(value)
+
 
 class ModelGenerator:
     """Generator for PCM models, both minimal working examples and random models."""
@@ -184,12 +190,22 @@ class ModelGenerator:
         # Create components
         for i in range(num_components):
 
-            provided_interfaces_count = random.randint(1, round(len(self.interfaces)/2))
-            required_interfaces_count = random.randint(1, round(len(self.interfaces)/2))
+            provided_interfaces_count = random.randint(
+                1, round(len(self.interfaces) / 2)
+            )
+            required_interfaces_count = random.randint(
+                1, round(len(self.interfaces) / 2)
+            )
 
-            provided_interfaces, required_interfaces = interface_provider.sample(provided_interfaces_count, required_interfaces_count)
-            provided_component_interface_provider = UniqueRandomSampler(provided_interfaces)
-            required_component_interface_provider = UniqueRandomSampler(required_interfaces)
+            provided_interfaces, required_interfaces = interface_provider.sample(
+                provided_interfaces_count, required_interfaces_count
+            )
+            provided_component_interface_provider = UniqueRandomSampler(
+                provided_interfaces
+            )
+            required_component_interface_provider = UniqueRandomSampler(
+                required_interfaces
+            )
 
             component = self.model_factory.create_component(
                 self._random_name("component")
@@ -329,7 +345,9 @@ class ModelGenerator:
             component = assembly.component
             for role in component.contents:
                 if isinstance(role, self.model_factory.PCM.DomainInterfaceProvidedRole):
-                    add_to_dictionary(role.type, assembly, interface_to_providing_component_map)
+                    add_to_dictionary(
+                        role.type, assembly, interface_to_providing_component_map
+                    )
                     provided_roles.append((assembly, role))
                 elif isinstance(role, self.model_factory.PCM.InterfaceRequiredRole):
                     required_roles.append((assembly, role))
@@ -340,10 +358,12 @@ class ModelGenerator:
                 continue
 
             connector = self.model_factory.create_connector(
-                    to_context=req_assembly,
-                    from_context=random.choice(interface_to_providing_component_map[req_role.type]),
-                    requiring_role=req_role
-                )
+                to_context=req_assembly,
+                from_context=random.choice(
+                    interface_to_providing_component_map[req_role.type]
+                ),
+                requiring_role=req_role,
+            )
 
             system.contents.append(connector)
 
@@ -456,13 +476,14 @@ class ModelGenerator:
             # Open workload with exponential distribution
             rate = random.uniform(0.01, 0.1)
             # Create a simple double literal directly
-            # We're keeping it simple to avoid the complex probability function issue
             inter_arrival_time = self.expr_factory.create_double_literal(rate)
             workload = self.model_factory.create_open_workload(inter_arrival_time)
         else:
             # Closed workload
             num_users = random.randint(1, 20)
-            think_time = self.expr_factory.create_double_literal(random.uniform(0.5, 5.0))
+            think_time = self.expr_factory.create_double_literal(
+                random.uniform(0.5, 5.0)
+            )
             workload = self.model_factory.create_closed_workload(num_users, think_time)
 
         scenario.workload = workload
@@ -493,27 +514,35 @@ class ModelGenerator:
                                 value = random.randint(1, 100)
                                 params.append(
                                     self.model_factory.create_parameter_specification(
-                                        specification=self.expr_factory.create_int_literal(value)
+                                        specification=self.expr_factory.create_int_literal(
+                                            value
+                                        )
                                     )
                                 )
                             elif param.type.type.name == "DOUBLE":
                                 value = round(random.uniform(1.0, 100.0), 2)
                                 params.append(
                                     self.model_factory.create_parameter_specification(
-                                        specification=self.expr_factory.create_double_literal(value)
+                                        specification=self.expr_factory.create_double_literal(
+                                            value
+                                        )
                                     )
                                 )
                             elif param.type.type.name == "BOOL":
                                 params.append(
                                     self.model_factory.create_parameter_specification(
-                                        specification=self.expr_factory.create_bool_literal(random.choice([True, False]))
+                                        specification=self.expr_factory.create_bool_literal(
+                                            random.choice([True, False])
+                                        )
                                     )
                                 )
                             else:
                                 # Default for STRING and other types
                                 params.append(
                                     self.model_factory.create_parameter_specification(
-                                        specification=self.expr_factory.create_string_literal("1")
+                                        specification=self.expr_factory.create_string_literal(
+                                            "1"
+                                        )
                                     )
                                 )
 
