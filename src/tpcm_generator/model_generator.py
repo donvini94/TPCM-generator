@@ -480,7 +480,7 @@ class ModelGenerator:
                 signatures = [
                     sig
                     for sig in role.type.contents
-                    if hasattr(sig, "eClass") and sig.eClass.name == "Signature"
+                    if isinstance(sig, self.model_factory.PCM.Signature)
                 ]
 
                 if signatures:
@@ -550,10 +550,10 @@ class ModelGenerator:
         repository = self.generate_repository()
         system = self.generate_system()
         allocation = self.generate_allocation(system)
-        # usage = self.generate_usage_model(system)
+        usage = self.generate_usage_model(system)
 
         # Add elements to model
-        model.fragments.extend([repository, system, allocation])
+        model.fragments.extend([repository, system, allocation, usage])
 
         # Save model
         xml_filename = f"{model_name}.xml"
