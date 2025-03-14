@@ -62,21 +62,51 @@ def main():
         "-i",
         type=int,
         default=5,
-        help="Number of interfaces to generate (for random model)",
+        help="Max number of interfaces to generate (for random model)",
     )
     parser.add_argument(
         "--components",
         "-c",
         type=int,
         default=10,
-        help="Number of components to generate (for random model)",
+        help="Max number of components to generate (for random model)",
     )
     parser.add_argument(
         "--containers",
         "-r",
         type=int,
         default=3,
-        help="Number of resource containers to generate (for random model)",
+        help="Max number of resource containers to generate (for random model)",
+    )
+    parser.add_argument(
+        "--max-params",
+        type=int,
+        default=3,
+        help="Max parameters per signature",
+    )
+    parser.add_argument(
+        "--min-sigs",
+        type=int,
+        default=1,
+        help="Min signatures per interface",
+    )
+    parser.add_argument(
+        "--max-sigs",
+        type=int,
+        default=5,
+        help="Max signatures per interface",
+    )
+    parser.add_argument(
+        "--min-provided",
+        type=int,
+        default=1,
+        help="Min provided interfaces per component",
+    )
+    parser.add_argument(
+        "--min-required",
+        type=int,
+        default=1,
+        help="Min required interfaces per component",
     )
     parser.add_argument(
         "--convert", "-t", action="store_true", help="Convert the output to TPCM format"
@@ -95,6 +125,7 @@ def main():
         # Use a new seed for each model if a seed is specified
         current_seed = args.seed + i if args.seed is not None else None
 
+        import random
         # Generate a unique output name for each model if multiple models
         model_name = args.output
         if args.models > 1:
@@ -103,7 +134,43 @@ def main():
 
             model_name = f"generated_{random_name('')}"
 
-        output_file = f"{model_name}.xml"
+        # For multiple models, generate random model parameters for different model shapes
+        if args.models > 1:
+            # Set random seed for parameter generation (different from model generation seed)
+            param_seed = current_seed + 1000 if current_seed is not None else None
+            param_random = random.Random(param_seed)
+            
+            # Generate random parameters within specified max values
+            # Ensure we have at least 2 interfaces for more complex models
+            num_interfaces = param_random.randint(2, args.interfaces) if args.interfaces > 1 else 1
+            # Ensure at least 2 components for more interesting systems
+            num_components = param_random.randint(2, args.components) if args.components > 1 else 1
+            # Ensure at least 1 container
+            num_containers = param_random.randint(1, args.containers)
+            
+            # Generate other random parameters
+            max_params = param_random.randint(1, args.max_params)
+            min_sigs = param_random.randint(1, args.min_sigs)
+            max_sigs = param_random.randint(min_sigs, args.max_sigs)
+            min_provided = param_random.randint(1, args.min_provided)
+            min_required = param_random.randint(1, args.min_required)
+        else:
+            # Use command line parameters directly for a single model
+            num_interfaces = args.interfaces
+            num_components = args.components
+            num_containers = args.containers
+            max_params = args.max_params
+            min_sigs = args.min_sigs
+            max_sigs = args.max_sigs
+            min_provided = args.min_provided
+            min_required = args.min_required
+
+        # Make sure the generated directory exists
+        os.makedirs("generated", exist_ok=True)
+        
+        # Add generated directory prefix to model name and set output file
+        model_name_with_dir = f"generated/{model_name}"
+        output_file = f"{model_name_with_dir}.xml"
         
         # For multiple models, run each generation in a subprocess to ensure complete isolation
         if args.models > 1 and i > 0:
@@ -114,10 +181,16 @@ def main():
             cmd = [
                 sys.executable, 
                 os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "main.py"),
+                # Use just the model name without directory prefix - subprocess will add the directory
                 f"--output={model_name}",
-                f"--interfaces={args.interfaces}",
-                f"--components={args.components}",
-                f"--containers={args.containers}"
+                f"--interfaces={num_interfaces}",
+                f"--components={num_components}",
+                f"--containers={num_containers}",
+                f"--max-params={max_params}",
+                f"--min-sigs={min_sigs}",
+                f"--max-sigs={max_sigs}",
+                f"--min-provided={min_provided}",
+                f"--min-required={min_required}"
             ]
             
             if current_seed is not None:
@@ -126,9 +199,15 @@ def main():
             if args.convert:
                 cmd.append("--convert")
                 
+            # Create directories if they don't exist (in case the subprocess needs them)
+            os.makedirs("generated", exist_ok=True)
+            if args.convert:
+                os.makedirs("input", exist_ok=True)
+                
             print(
-                f"Generating random model {i+1}/{args.models} with {args.interfaces} interfaces, "
-                f"{args.components} components, {args.containers} containers..."
+                f"Generating random model {i+1}/{args.models} with "
+                f"{num_interfaces} interfaces, {num_components} components, {num_containers} containers, "
+                f"{min_sigs}-{max_sigs} signatures per interface, {max_params} max params..."
             )
             
             # Run as a separate process
@@ -140,20 +219,39 @@ def main():
 
         # Create a fresh model generator for each model (to avoid shared state)
         print(
-            f"Generating random model {i+1}/{args.models} with {args.interfaces} interfaces, "
-            f"{args.components} components, {args.containers} containers..."
+            f"Generating random model {i+1}/{args.models} with "
+            f"{num_interfaces} interfaces, {num_components} components, {num_containers} containers, "
+            f"{min_sigs}-{max_sigs} signatures per interface, {max_params} max params..."
         )
-        generator = ModelGenerator(seed=current_seed)
+        
+        # Configure model generator with all parameters
+        config = {
+            "max_parameters_per_signature": max_params,
+            "min_signatures_per_interface": min_sigs,
+            "max_signatures_per_interface": max_sigs,
+            "min_provided_interfaces_per_component": min_provided,
+            "min_required_interfaces_per_component": min_required
+        }
+        
+        generator = ModelGenerator(seed=current_seed, **config)
 
         # Generate all model elements and create the complete model
-        model, model_resource = generator.generate_complete_model(model_name)
+        model, model_resource = generator.generate_complete_model(
+            model_name_with_dir,  # Pass the model name with directory prefix
+            num_interfaces=num_interfaces,
+            num_components=num_components
+        )
         generated_models.append(model)
         print(f"Random model generated and saved to {output_file}")
 
         # Convert to TPCM if requested
         if args.convert:
+            # Make sure the input directory exists
+            os.makedirs("input", exist_ok=True)
+            
+            # Create TPCM path with just the base model name (no directory prefix)
             tpcm_path = f"input/{model_name}.tpcm"
-            print(f"Converting to TPCM format: {tpcm_path}...")
+            print(f"Converting {output_file} to TPCM format: {tpcm_path}...")
             if convert_to_tpcm(output_file, tpcm_path):
                 print(f"Model converted to TPCM format: {tpcm_path}")
 

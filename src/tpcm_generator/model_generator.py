@@ -8,31 +8,119 @@ from .resource_environment import get_resource_environment
 
 
 class UniqueRandomInterfaceSampler:
+    """Samples interfaces for components, handling provided and required roles.
+    
+    This handles edge cases like having fewer interfaces than requested
+    and ensures valid sampling even with very small numbers of interfaces.
+    """
     def __init__(self, data):
-        self.data = data
-        self.remaining = list(data)
-        self.remaining_provided = list(data)
-
+        self.data = list(data)  # Create a copy to avoid modifying the original
+        
     def sample(self, count_provided, count_required):
-        if count_provided + count_required > len(self.data):
-            raise ValueError("2 * n cannot be greater than the size of the data set")
-
-        if len(self.remaining_provided) < count_provided:
-            self.remaining_provided = list(self.data)
-
-        list_provided = random.sample(self.remaining_provided, count_provided)
-        self.remaining_provided = list(
-            set(self.remaining_provided) - set(list_provided)
-        )
-        self.remaining = list(set(self.remaining) - set(list_provided))
-
-        if len(self.remaining) < count_required:
-            self.remaining = list(set(self.data) - set(list_provided))
-
-        list_required = random.sample(self.remaining, count_required)
-        self.remaining = list(set(self.remaining) - set(list_required))
-
-        return list_provided, list_required
+        """Sample interfaces for provided and required roles.
+        
+        Args:
+            count_provided: Desired number of provided interfaces
+            count_required: Desired number of required interfaces
+            
+        Returns:
+            Tuple of (provided_interfaces, required_interfaces)
+        """
+        # Handle empty interfaces case
+        if not self.data:
+            return [], []
+            
+        # Get total available interfaces
+        available = len(self.data)
+        
+        # Adjust counts if more requested than available
+        count_provided = min(count_provided, available)
+        count_required = min(count_required, available)
+        
+        # Special case: If we only have one interface, use it for both roles
+        if available == 1:
+            return self.data, self.data
+            
+        # If total requested interfaces exceeds available,
+        # we need to share some interfaces between provided and required
+        if count_provided + count_required > available:
+            # We'll need some overlap - distribute interfaces proportionally
+            total_requested = count_provided + count_required
+            
+            # Calculate how many interfaces need to be shared
+            overlap_count = count_provided + count_required - available
+            
+            # First, ensure we have enough for provided interfaces
+            all_interfaces = self.data.copy()
+            random.shuffle(all_interfaces)
+            
+            # Split interfaces into three groups:
+            # 1. Provided-only
+            # 2. Shared (both provided and required)
+            # 3. Required-only
+            shared_count = overlap_count
+            provided_only_count = count_provided - shared_count
+            required_only_count = count_required - shared_count
+            
+            # Adjust if we have negative values
+            if provided_only_count < 0:
+                shared_count += provided_only_count
+                provided_only_count = 0
+            if required_only_count < 0:
+                shared_count += required_only_count
+                required_only_count = 0
+                
+            # Ensure we don't exceed available interfaces
+            total_count = provided_only_count + shared_count + required_only_count
+            if total_count > available:
+                # Scale everything down proportionally
+                scale_factor = available / total_count
+                provided_only_count = max(0, int(provided_only_count * scale_factor))
+                shared_count = max(0, int(shared_count * scale_factor))
+                required_only_count = max(0, int(required_only_count * scale_factor))
+                
+                # Handle any remaining interfaces
+                remaining = available - (provided_only_count + shared_count + required_only_count)
+                if remaining > 0:
+                    # Prioritize shared interfaces
+                    shared_count += remaining
+            
+            # Create the groups
+            start_idx = 0
+            provided_only = all_interfaces[start_idx:start_idx + provided_only_count]
+            start_idx += provided_only_count
+            
+            shared = all_interfaces[start_idx:start_idx + shared_count]
+            start_idx += shared_count
+            
+            required_only = all_interfaces[start_idx:start_idx + required_only_count]
+            
+            # Create final lists
+            provided_interfaces = provided_only + shared
+            required_interfaces = required_only + shared
+            
+            return provided_interfaces, required_interfaces
+        else:
+            # If we have enough interfaces, just randomly select distinct sets
+            all_interfaces = self.data.copy()
+            random.shuffle(all_interfaces)
+            
+            provided_interfaces = all_interfaces[:count_provided]
+            
+            # For required interfaces, use distinct ones first then reuse if needed
+            remaining = [i for i in all_interfaces if i not in provided_interfaces]
+            
+            if len(remaining) >= count_required:
+                # We have enough distinct interfaces
+                required_interfaces = random.sample(remaining, count_required)
+            else:
+                # Need to reuse some provided interfaces
+                required_interfaces = remaining.copy()
+                additional_needed = count_required - len(required_interfaces)
+                additional = random.sample(provided_interfaces, additional_needed)
+                required_interfaces.extend(additional)
+                
+            return provided_interfaces, required_interfaces
 
 
 class UniqueRandomSampler:
@@ -60,16 +148,61 @@ def add_to_dictionary(key, value, dict):
 class ModelGenerator:
     """Generator for PCM models, both minimal working examples and random models."""
 
-    # TODO: add magic number definitions at the top so they can be globally configured easily for expirments (param_count, sig_count, provided_count... etc.)
-    def __init__(self, seed=None):
+    def __init__(self, seed=None, **config):
         """Initialize the model generator.
 
         Args:
             seed: Optional random seed for reproducibility
+            config: Configuration dictionary with parameters for model generation
         """
         # Set random seed if provided
         if seed is not None:
             random.seed(seed)
+
+        # Set default configuration values
+        self.config = {
+            # Parameter counts
+            "max_parameters_per_signature": 5,  # Max parameters per signature
+            
+            # Signature counts
+            "min_signatures_per_interface": 1,  # Min signatures per interface
+            "max_signatures_per_interface": 10,  # Max signatures per interface
+            
+            # Component settings
+            "min_provided_interfaces_per_component": 1,  # Min provided interfaces per component
+            "min_required_interfaces_per_component": 1,  # Min required interfaces per component
+            
+            # Assembly settings
+            "min_assemblies": 2,  # Min assembly contexts in system
+            "max_assemblies": 10,  # Max assembly contexts in system
+            
+            # System settings
+            "min_exposed_interfaces": 1,  # Min exposed interfaces in system
+            "max_exposed_interfaces": 10,  # Max exposed interfaces in system
+            
+            # Allocation settings
+            "min_allocation_groups": 1,  # Min allocation groups
+            
+            # Usage model settings
+            "max_user_count": 20,  # Max users in closed workload
+            "min_calls": 1,  # Min system calls in usage model
+            "max_calls": 9,  # Max system calls in usage model
+            
+            # Value ranges
+            "int_param_min": 0,  # Min value for integer parameters
+            "int_param_max": 10000,  # Max value for integer parameters
+            "string_param_min_length": 5,  # Min length for string parameters
+            "string_param_max_length": 150,  # Max length for string parameters
+            "double_param_min": 0.0,  # Min value for double parameters
+            "double_param_max": 100000000.0,  # Max value for double parameters
+            "arrival_rate_min": 0.01,  # Min arrival rate for open workload
+            "arrival_rate_max": 0.9,  # Max arrival rate for open workload
+            "think_time_min": 0.5,  # Min think time for closed workload
+            "think_time_max": 500.0,  # Max think time for closed workload
+        }
+        
+        # Override default config with provided values
+        self.config.update(config)
 
         # Create a completely fresh resource set for this model generation
         from pyecore.resources import ResourceSet
@@ -137,8 +270,8 @@ class ModelGenerator:
         # Create signature
         signature = self.model_factory.create_operation_signature(name, return_type)
 
-        # Add random parameters (0-3)
-        param_count = random.randint(0, 3)
+        # Add random parameters (0 to max_parameters_per_signature)
+        param_count = random.randint(0, self.config["max_parameters_per_signature"])
         for i in range(param_count):
             param_type = random.choice(list(self.primitive_types.values()))
             param = self.model_factory.create_parameter(f"param{i}", param_type)
@@ -174,8 +307,11 @@ class ModelGenerator:
                 random_name("interface")
             )
 
-            # Add 1-5 signatures to each interface
-            sig_count = random.randint(1, 5)
+            # Add signatures to each interface based on configuration
+            sig_count = random.randint(
+                self.config["min_signatures_per_interface"],
+                self.config["max_signatures_per_interface"]
+            )
             for j in range(sig_count):
                 self._create_random_signature(interface)
 
@@ -187,11 +323,21 @@ class ModelGenerator:
         # Create components
         for i in range(num_components):
 
+            # Calculate max interfaces available for provided/required
+            max_provided = max(1, min(len(self.interfaces), round(len(self.interfaces) / 2)))
+            max_required = max(1, min(len(self.interfaces), round(len(self.interfaces) / 2)))
+            
+            # Ensure we don't try to create more interfaces than we can
+            min_provided = min(self.config["min_provided_interfaces_per_component"], max_provided)
+            min_required = min(self.config["min_required_interfaces_per_component"], max_required)
+            
             provided_interfaces_count = random.randint(
-                1, round(len(self.interfaces) / 2)
+                min_provided,
+                max_provided
             )
             required_interfaces_count = random.randint(
-                1, round(len(self.interfaces) / 2)
+                min_required,
+                max_required
             )
 
             provided_interfaces, required_interfaces = interface_provider.sample(
@@ -258,14 +404,20 @@ class ModelGenerator:
                         if param.type == self.primitive_types["Integer"]:
                             result = self.model_factory.create_parameter_specification(
                                 specification=self.expr_factory.create_int_literal(
-                                    random.randint(0, 100)
+                                    random.randint(
+                                        self.config["int_param_min"], 
+                                        self.config["int_param_max"]
+                                    )
                                 )
                             )
                             coa.parameters.append(result)
 
                         elif param.type == self.primitive_types["String"]:
                             # Create random string result
-                            length = random.randint(5, 15)
+                            length = random.randint(
+                                self.config["string_param_min_length"], 
+                                self.config["string_param_max_length"]
+                            )
                             random_string = "".join(
                                 random.choices(
                                     string.ascii_letters + string.digits, k=length
@@ -290,7 +442,10 @@ class ModelGenerator:
                         else:
                             result = self.model_factory.create_parameter_specification(
                                 specification=self.expr_factory.create_double_literal(
-                                    round(random.uniform(0.0, 100.0), 2)
+                                    round(random.uniform(
+                                        self.config["double_param_min"], 
+                                        self.config["double_param_max"]
+                                    ), 2)
                                 )
                             )
                             coa.parameters.append(result)
@@ -321,11 +476,17 @@ class ModelGenerator:
         # Sebastian: eine Komponente im Repository, die nicht im System instanziiert wird, ist nicht wirklich sinnvoll
         # Select random components to include in the system
         selected_components = []
-        num_assemblies = min(random.randint(2, 5), len(available_components))
+        num_assemblies = min(
+            random.randint(
+                self.config["min_assemblies"],
+                self.config["max_assemblies"]
+            ), 
+            len(available_components)
+        )
         selected_components = random.sample(available_components, num_assemblies)
 
         # Create assembly contexts for each selected component
-        for component in available_components:
+        for component in selected_components:
             assembly = self.model_factory.create_assembly_context(
                 random_name("assembly"), component
             )
@@ -354,19 +515,28 @@ class ModelGenerator:
             if req_role.name in ["cpu", "hdd"]:
                 continue
 
-            connector = self.model_factory.create_connector(
-                to_context=req_assembly,
-                from_context=random.choice(
-                    interface_to_providing_component_map[req_role.type]
-                ),
-                requiring_role=req_role,
-            )
-
-            system.contents.append(connector)
+            # Make sure we have a provider for this interface type
+            if req_role.type in interface_to_providing_component_map and interface_to_providing_component_map[req_role.type]:
+                connector = self.model_factory.create_connector(
+                    to_context=req_assembly,
+                    from_context=random.choice(
+                        interface_to_providing_component_map[req_role.type]
+                    ),
+                    requiring_role=req_role,
+                )
+                
+                # Only add the connector if we successfully created it
+                system.contents.append(connector)
 
         # Create system provided roles for some of the provided interfaces
         # (exposing some component interfaces to the outside world)
-        exposed_count = min(random.randint(1, 3), len(provided_roles))
+        exposed_count = min(
+            random.randint(
+                self.config["min_exposed_interfaces"],
+                self.config["max_exposed_interfaces"]
+            ), 
+            len(provided_roles)
+        )
         if provided_roles:
             exposed_provided = random.sample(provided_roles, exposed_count)
 
@@ -410,8 +580,11 @@ class ModelGenerator:
 
         # Distribute assemblies across resource containers randomly
         num_groups = min(len(containers), len(assemblies))
-        # Create at least one group, but not more than we have containers or assemblies
-        num_groups = max(1, random.randint(1, num_groups))
+        # Create at least min_allocation_groups group, but not more than we have containers or assemblies
+        num_groups = max(
+            self.config["min_allocation_groups"], 
+            random.randint(self.config["min_allocation_groups"], num_groups)
+        )
 
         # Split assemblies into groups
         assembly_groups = []
@@ -471,22 +644,31 @@ class ModelGenerator:
         # Create workload (randomly choose between open and closed workload)
         if random.choice([True, False]):
             # Open workload with exponential distribution
-            rate = random.uniform(0.01, 0.1)
+            rate = random.uniform(
+                self.config["arrival_rate_min"],
+                self.config["arrival_rate_max"]
+            )
             # Create a simple double literal directly
             inter_arrival_time = self.expr_factory.create_double_literal(rate)
             workload = self.model_factory.create_open_workload(inter_arrival_time)
         else:
             # Closed workload
-            num_users = random.randint(1, 20)
+            num_users = random.randint(1, self.config["max_user_count"])
             think_time = self.expr_factory.create_double_literal(
-                random.uniform(0.5, 5.0)
+                random.uniform(
+                    self.config["think_time_min"],
+                    self.config["think_time_max"]
+                )
             )
             workload = self.model_factory.create_closed_workload(num_users, think_time)
 
         scenario.workload = workload
 
         # Create entry level system calls to random system provided roles
-        call_count = random.randint(1, 3)
+        call_count = random.randint(
+            self.config["min_calls"],
+            self.config["max_calls"]
+        )
         for _ in range(call_count):
             # Choose random role
             role = random.choice(system_provided_roles)
@@ -508,7 +690,10 @@ class ModelGenerator:
                         # Create random parameter values based on parameter type
                         if param.type.eClass.name == "PrimitiveDatatype":
                             if param.type.type.name == "INT":
-                                value = random.randint(1, 100)
+                                value = random.randint(
+                                    self.config["int_param_min"],
+                                    self.config["int_param_max"]
+                                )
                                 params.append(
                                     self.model_factory.create_parameter_specification(
                                         specification=self.expr_factory.create_int_literal(
@@ -517,7 +702,10 @@ class ModelGenerator:
                                     )
                                 )
                             elif param.type.type.name == "DOUBLE":
-                                value = round(random.uniform(1.0, 100.0), 2)
+                                value = round(random.uniform(
+                                    self.config["double_param_min"],
+                                    self.config["double_param_max"]
+                                ), 2)
                                 params.append(
                                     self.model_factory.create_parameter_specification(
                                         specification=self.expr_factory.create_double_literal(
@@ -554,11 +742,13 @@ class ModelGenerator:
 
         return usage
 
-    def generate_complete_model(self, model_name="generated"):
+    def generate_complete_model(self, model_name="generated", num_interfaces=None, num_components=None):
         """Generate a complete PCM model with all elements.
 
         Args:
             model_name: Base name for the model and output files
+            num_interfaces: Number of interfaces to generate (default: 5)
+            num_components: Number of components to generate (default: 10)
 
         Returns:
             Tuple of (model, model_resource)
@@ -571,7 +761,10 @@ class ModelGenerator:
         # Add resource environment to the model
         self.resource_env.add_to_model(model)
         # Generate all model elements
-        repository = self.generate_repository()
+        repository = self.generate_repository(
+            num_interfaces=num_interfaces or 5,
+            num_components=num_components or 10
+        )
         system = self.generate_system()
         allocation = self.generate_allocation(system)
         usage = self.generate_usage_model(system)
@@ -580,7 +773,8 @@ class ModelGenerator:
         model.fragments.extend([repository, system, allocation, usage])
 
         # Save model
-        xml_filename = f"{model_name}.xml"
+        # Use the path provided by the caller (which may already include the directory)
+        xml_filename = model_name if model_name.endswith('.xml') else f"{model_name}.xml"
         model_resource = save_model(model, xml_filename, self.model_factory.rset)
 
         return model, model_resource
