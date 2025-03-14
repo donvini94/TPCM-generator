@@ -71,9 +71,18 @@ class ModelGenerator:
         if seed is not None:
             random.seed(seed)
 
-        # Initialize factories
-        self.model_factory = ModelFactory()
+        # Create a completely fresh resource set for this model generation
+        from pyecore.resources import ResourceSet
+        from .utils import setup_metamodel
+        
+        # Initialize with a fresh ResourceSet and metamodel
+        rset, PCM = setup_metamodel()
+        
+        # Initialize factories with the fresh ResourceSet
+        self.model_factory = ModelFactory(rset=rset, PCM=PCM)
         self.expr_factory = ExpressionFactory(self.model_factory.rset)
+        
+        # Create fresh instances using the same ResourceSet to ensure type compatibility
         self.std_defs = get_std_definitions(self.model_factory.rset)
         self.resource_env = get_resource_environment(self.model_factory.rset)
 
@@ -559,7 +568,7 @@ class ModelGenerator:
 
         # Add standard definitions and resource environment
         self.std_defs.add_to_model(model)
-        # Get resource environment from the singleton pattern
+        # Add resource environment to the model
         self.resource_env.add_to_model(model)
         # Generate all model elements
         repository = self.generate_repository()

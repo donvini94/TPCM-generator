@@ -81,29 +81,84 @@ def main():
     parser.add_argument(
         "--convert", "-t", action="store_true", help="Convert the output to TPCM format"
     )
+    parser.add_argument(
+        "--models", "-m", type=int, default=1, help="Number of models to generate"
+    )
 
     args = parser.parse_args()
 
-    output_file = f"{args.output}.xml"
+    # Keep track of generated models
+    generated_models = []
 
-    # Create model generator for random generation
-    print(
-        f"Generating random model with {args.interfaces} interfaces, {args.components} components, {args.containers} containers..."
-    )
-    generator = ModelGenerator(seed=args.seed)
+    # Generate the specified number of models
+    for i in range(args.models):
+        # Use a new seed for each model if a seed is specified
+        current_seed = args.seed + i if args.seed is not None else None
 
-    # Generate all model elements and create the complete model
-    model, model_resource = generator.generate_complete_model(args.output)
-    print(f"Random model generated and saved to {output_file}")
+        # Generate a unique output name for each model if multiple models
+        model_name = args.output
+        if args.models > 1:
+            # Import utils directly to avoid circular imports
+            from tpcm_generator.utils import random_name
 
-    # Convert to TPCM if requested
-    if args.convert:
-        tpcm_path = f"input/{args.output}.tpcm"
-        print(f"Converting to TPCM format: {tpcm_path}...")
-        if convert_to_tpcm(output_file, tpcm_path):
-            print(f"Model converted to TPCM format: {tpcm_path}")
+            model_name = f"generated_{random_name('')}"
 
-    return model
+        output_file = f"{model_name}.xml"
+        
+        # For multiple models, run each generation in a subprocess to ensure complete isolation
+        if args.models > 1 and i > 0:
+            import sys
+            import subprocess
+            
+            # Build command for subprocess to generate a single model
+            cmd = [
+                sys.executable, 
+                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "main.py"),
+                f"--output={model_name}",
+                f"--interfaces={args.interfaces}",
+                f"--components={args.components}",
+                f"--containers={args.containers}"
+            ]
+            
+            if current_seed is not None:
+                cmd.append(f"--seed={current_seed}")
+                
+            if args.convert:
+                cmd.append("--convert")
+                
+            print(
+                f"Generating random model {i+1}/{args.models} with {args.interfaces} interfaces, "
+                f"{args.components} components, {args.containers} containers..."
+            )
+            
+            # Run as a separate process
+            result = subprocess.run(cmd, check=True)
+            
+            # Add a placeholder model (actual model file already created by subprocess)
+            generated_models.append(None)
+            continue
+
+        # Create a fresh model generator for each model (to avoid shared state)
+        print(
+            f"Generating random model {i+1}/{args.models} with {args.interfaces} interfaces, "
+            f"{args.components} components, {args.containers} containers..."
+        )
+        generator = ModelGenerator(seed=current_seed)
+
+        # Generate all model elements and create the complete model
+        model, model_resource = generator.generate_complete_model(model_name)
+        generated_models.append(model)
+        print(f"Random model generated and saved to {output_file}")
+
+        # Convert to TPCM if requested
+        if args.convert:
+            tpcm_path = f"input/{model_name}.tpcm"
+            print(f"Converting to TPCM format: {tpcm_path}...")
+            if convert_to_tpcm(output_file, tpcm_path):
+                print(f"Model converted to TPCM format: {tpcm_path}")
+
+    # Return the last generated model for backward compatibility
+    return generated_models[-1] if generated_models else None
 
 
 if __name__ == "__main__":
