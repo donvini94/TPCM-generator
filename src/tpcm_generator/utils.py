@@ -1,5 +1,7 @@
 from pyecore.resources import ResourceSet, URI
 from pyecore.utils import DynamicEPackage
+import string
+import random
 
 
 def setup_metamodel(ecore_path="ecores/TPCM.ecore"):
@@ -43,3 +45,15 @@ def save_model(model, filename, rset):
     model_resource.append(model)
     model_resource.save()
     return model_resource
+
+def random_name(prefix):
+        """Generate a random name with a given prefix.
+
+        Args:
+            prefix: Prefix for the name
+
+        Returns:
+            A random name string
+        """
+        suffix = "".join(random.choices(string.ascii_uppercase, k=5))
+        return f"{prefix}_{suffix}"

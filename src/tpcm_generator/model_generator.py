@@ -1,9 +1,8 @@
 import random
 import string
-import copy
 from .model_factory import ModelFactory
 from .expression_factory import ExpressionFactory
-from .utils import setup_metamodel, save_model
+from .utils import save_model, random_name
 from .std_definitions import get_std_definitions
 from .resource_environment import get_resource_environment
 
@@ -86,17 +85,6 @@ class ModelGenerator:
         self.assembly_contexts = []
         self.resource_containers = []
 
-    def _random_name(self, prefix):
-        """Generate a random name with a given prefix.
-
-        Args:
-            prefix: Prefix for the name
-
-        Returns:
-            A random name string
-        """
-        suffix = "".join(random.choices(string.ascii_uppercase, k=5))
-        return f"{prefix}_{suffix}"
 
     def _create_primitive_types(self, repository):
         """Create primitive datatypes and add them to a repository.
@@ -133,7 +121,7 @@ class ModelGenerator:
             Created signature
         """
         # Choose random name and return type
-        name = self._random_name("operation")
+        name = random_name("operation")
         if return_type is None:
             return_type = random.choice(list(self.primitive_types.values()))
 
@@ -165,7 +153,7 @@ class ModelGenerator:
         """
         # Create repository
         repository = self.model_factory.create_repository(
-            self._random_name("repository")
+            random_name("repository")
         )
 
         # Create primitive types
@@ -174,7 +162,7 @@ class ModelGenerator:
         # Create interfaces
         for i in range(num_interfaces):
             interface = self.model_factory.create_domain_interface(
-                self._random_name("interface")
+                random_name("interface")
             )
 
             # Add 1-5 signatures to each interface
@@ -208,7 +196,7 @@ class ModelGenerator:
             )
 
             component = self.model_factory.create_component(
-                self._random_name("component")
+                random_name("component")
             )
             provided_roles = []
             required_roles = []
@@ -217,7 +205,7 @@ class ModelGenerator:
                 if self.interfaces:
                     provided_role = provided_component_interface_provider.sample()
                     role = self.model_factory.create_provided_role(
-                        self._random_name("provided"), provided_role
+                        random_name("provided"), provided_role
                     )
                     component.contents.append(role)
                     provided_roles.append(role)
@@ -228,7 +216,7 @@ class ModelGenerator:
                     # Sebastian: fixed by using the UniqueRandomSampler
                     required_role = required_component_interface_provider.sample()
                     role = self.model_factory.create_required_role(
-                        self._random_name("required"), required_role
+                        random_name("required"), required_role
                     )
                     component.contents.append(role)
                     required_roles.append(role)
@@ -314,7 +302,7 @@ class ModelGenerator:
             Generated system
         """
         # Create system
-        system = self.model_factory.create_system(self._random_name("system"))
+        system = self.model_factory.create_system(random_name("system"))
 
         # Create assembly contexts for random components
         available_components = [c for c in self.components if c.contents]
@@ -330,7 +318,7 @@ class ModelGenerator:
         # Create assembly contexts for each selected component
         for component in available_components:
             assembly = self.model_factory.create_assembly_context(
-                self._random_name("assembly"), component
+                random_name("assembly"), component
             )
             system.contents.append(assembly)
             self.assembly_contexts.append(assembly)
@@ -375,7 +363,7 @@ class ModelGenerator:
 
             for assembly, role in exposed_provided:
                 system_role = self.model_factory.create_system_provided_role(
-                    self._random_name("system_provided"), role.type, assembly
+                    random_name("system_provided"), role.type, assembly
                 )
                 system.contents.append(system_role)
 
@@ -392,7 +380,7 @@ class ModelGenerator:
         """
         # Create allocation
         allocation = self.model_factory.create_allocation(
-            self._random_name("allocation")
+            random_name("allocation")
         )
 
         # Get the resource containers from the resource environment
@@ -438,7 +426,7 @@ class ModelGenerator:
             if i < len(containers) and group:
                 container = containers[i]
                 alloc_ctx = self.model_factory.create_allocation_context(
-                    self._random_name("alloc"), group, container
+                    random_name("alloc"), group, container
                 )
                 allocation.contents.append(alloc_ctx)
 
@@ -454,7 +442,7 @@ class ModelGenerator:
             Generated usage model
         """
         # Create usage model
-        usage = self.model_factory.create_usage_model(self._random_name("usage"))
+        usage = self.model_factory.create_usage_model(random_name("usage"))
 
         # Find system provided roles that can be called
         system_provided_roles = [
@@ -468,7 +456,7 @@ class ModelGenerator:
 
         # Create a usage scenario
         scenario = self.model_factory.create_usage_scenario(
-            self._random_name("scenario")
+            random_name("scenario")
         )
 
         # Create workload (randomly choose between open and closed workload)
