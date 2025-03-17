@@ -16,4 +16,4 @@ RUN chmod -R a+rwx tpcm-generator
 
 WORKDIR /tpcm-generator
 
-ENTRYPOINT [ "python3", "main.py", "--convert" ]
+ENTRYPOINT [ "python3", "main.py", "--models", "10", "--convert" ]
