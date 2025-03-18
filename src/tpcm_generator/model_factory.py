@@ -414,6 +414,19 @@ class ModelFactory:
             for param in parameters:
                 call.parameters.append(param)
         return call
+    
+    def create_absolute_reference(self, reference):
+        """Create an absolute reference.
+        
+        Args:
+            reference: Reference
+            
+        Returns:
+            A new AbsoluteReference
+        """
+        ref = self.PCM.AbsoluteReference()
+        ref.reference = reference
+        return ref
 
     # === SEFF (Service Effect Specification) ===
 
