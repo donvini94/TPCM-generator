@@ -2,46 +2,12 @@
 """Main entry point for TPCM model generation."""
 
 import argparse
-import subprocess
 import os
 
 # Import from our modules
 from tpcm_generator.model_generator import ModelGenerator
+from tpcm_generator.utils import convert_to_tpcm
 
-
-def convert_to_tpcm(xml_path, tpcm_path):
-    """Convert XML model to TPCM format.
-
-    Args:
-        xml_path: Path to the XML model file
-        tpcm_path: Path to write the TPCM file
-
-    Returns:
-        True if conversion was successful, False otherwise
-    """
-    # Get the directory where the script is located
-    base_dir = os.path.dirname(
-        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    )
-    jar_path = os.path.join(base_dir, "SaveAs.jar")
-
-    try:
-        result = subprocess.run(
-            ["java", "-jar", jar_path, xml_path, tpcm_path],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        if result.stdout.strip():
-            print(f"Conversion output: {result.stdout}")
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"Error converting to TPCM: {e}")
-        if e.stdout:
-            print(f"Converter output: {e.stdout}")
-        if e.stderr:
-            print(f"Converter error: {e.stderr}")
-        return False
 
 
 def main():
