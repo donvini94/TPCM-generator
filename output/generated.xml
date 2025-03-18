@@ -1,0 +1,681 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<language:Model xmlns:xmi="http://www.omg.org/XMI" xmlns:language="http://www.palladiosimulator.org/textual/tpcm/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:stoex="http://sdq.ipd.uka.de/StochasticExpressions/2.2" xmi:version="2.0">
+  <fragments xsi:type="language:Repository" name="PrimitiveTypes">
+    <contents xsi:type="language:PrimitiveDatatype" name="Integer"/>
+    <contents xsi:type="language:PrimitiveDatatype" name="Double" type="DOUBLE"/>
+    <contents xsi:type="language:FailureType" name="CPUFailure"/>
+  </fragments>
+  <fragments xsi:type="language:ResourceTypeRepository">
+    <contents xsi:type="language:ResourceInterface" name="ICPU">
+      <contents xsi:type="language:OperationSignature" name="process">
+        <parameters name="amount" type="//@fragments.0/@contents.1"/>
+      </contents>
+    </contents>
+    <contents xsi:type="language:ResourceInterface" name="IHDD">
+      <contents xsi:type="language:OperationSignature" name="read">
+        <parameters name="amount" type="//@fragments.0/@contents.1"/>
+      </contents>
+      <contents xsi:type="language:OperationSignature" name="write">
+        <parameters name="amount" type="//@fragments.0/@contents.1"/>
+      </contents>
+    </contents>
+    <contents xsi:type="language:ResourceEntityType" name="SchedulingPolicy"/>
+    <contents xsi:type="language:ResourceEntity" name="FirstComeFirstServe" type="//@fragments.1/@contents.2"/>
+    <contents xsi:type="language:ResourceEntity" name="ProcessorSharing" type="//@fragments.1/@contents.2"/>
+    <contents xsi:type="language:ResourceEntity" name="Delay" type="//@fragments.1/@contents.2"/>
+    <contents xsi:type="language:ProcessingResourceType" name="CPUResource">
+      <contents xsi:type="language:ResourceInterfaceProvidedRole" type="//@fragments.1/@contents.0"/>
+      <contents xsi:type="language:ResourceFailureSpecification" failureType="//@fragments.0/@contents.2"/>
+      <definitions name="processingRate" type="//@fragments.0/@contents.1"/>
+      <definitions name="schedulingPolicy" type="//@fragments.1/@contents.2"/>
+    </contents>
+    <contents xsi:type="language:ProcessingResourceType" name="HDDResource">
+      <contents xsi:type="language:ResourceInterfaceProvidedRole" type="//@fragments.1/@contents.1"/>
+      <definitions name="processingRate" type="//@fragments.0/@contents.1"/>
+      <definitions name="schedulingPolicy" type="//@fragments.1/@contents.2"/>
+    </contents>
+    <contents xsi:type="language:ProcessingResourceType" name="Delay">
+      <definitions name="processingRate" type="//@fragments.0/@contents.1"/>
+      <definitions name="schedulingPolicy" type="//@fragments.1/@contents.2"/>
+    </contents>
+    <contents xsi:type="language:CommunicationLinkType" name="Ethernet">
+      <definitions name="throughput" type="//@fragments.0/@contents.1"/>
+      <definitions name="latency" type="//@fragments.1/@contents.2"/>
+    </contents>
+    <contents xsi:type="language:InternalConfigurableInterface" name="PassiveResource">
+      <definitions name="capacity" type="//@fragments.0/@contents.0"/>
+      <contents xsi:type="language:OperationSignature" name="acquire"/>
+      <contents xsi:type="language:OperationSignature" name="release"/>
+    </contents>
+  </fragments>
+  <fragments xsi:type="language:MappingConfiguration">
+    <contents imported="//@fragments.1/@contents.3" absoluteUri="pathmap://PCM_MODELS/Palladio.resourcetype#FCFS"/>
+    <contents imported="//@fragments.1/@contents.4" absoluteUri="pathmap://PCM_MODELS/Palladio.resourcetype#ProcessorSharing"/>
+    <contents imported="//@fragments.1/@contents.5" absoluteUri="pathmap://PCM_MODELS/Palladio.resourcetype#Delay"/>
+    <contents imported="//@fragments.1/@contents.0" absoluteUri="pathmap://PCM_MODELS/Palladio.resourcetype#_tw_Q8E5CEeCUKeckjJ_n-w"/>
+    <contents imported="//@fragments.1/@contents.0/@contents.0" absoluteUri="pathmap://PCM_MODELS/Palladio.resourcetype#_wF22kE5CEeCUKeckjJ_n-w"/>
+    <contents imported="//@fragments.1/@contents.1/@contents.0" absoluteUri="pathmap://PCM_MODELS/Palladio.resourcetype#_ygMyEE5CEeCUKeckjJ_n-w"/>
+    <contents imported="//@fragments.1/@contents.1/@contents.1" absoluteUri="pathmap://PCM_MODELS/Palladio.resourcetype#_zUFtIE5CEeCUKeckjJ_n-w"/>
+    <contents imported="//@fragments.1/@contents.1" absoluteUri="pathmap://PCM_MODELS/Palladio.resourcetype#_xXv8QE5CEeCUKeckjJ_n-w"/>
+    <contents imported="//@fragments.1/@contents.9" absoluteUri="pathmap://PCM_MODELS/Palladio.resourcetype#_o3sScH2AEdyH8uerKnHYug"/>
+    <contents imported="//@fragments.1/@contents.6" absoluteUri="pathmap://PCM_MODELS/Palladio.resourcetype#_oro4gG3fEdy4YaaT-RYrLQ"/>
+    <contents imported="//@fragments.1/@contents.7" absoluteUri="pathmap://PCM_MODELS/Palladio.resourcetype#_BIjHoQ3KEdyouMqirZIhzQ"/>
+  </fragments>
+  <fragments xsi:type="language:ResourceEnvironment" name="Environment">
+    <contents xsi:type="language:ResourceContainer" name="ApplicationServer">
+      <contents xsi:type="language:ProcessingResource" name="CPU" type="//@fragments.1/@contents.6">
+        <initialization>
+          <contents property="//@fragments.1/@contents.6/@definitions.0">
+            <specification xsi:type="stoex:DoubleLiteral" value="1000000000.0"/>
+          </contents>
+          <contents property="//@fragments.1/@contents.6/@definitions.1" referencedElement="//@fragments.1/@contents.4"/>
+        </initialization>
+      </contents>
+      <contents xsi:type="language:ProcessingResource" name="HDD" type="//@fragments.1/@contents.7">
+        <initialization>
+          <contents property="//@fragments.1/@contents.7/@definitions.0">
+            <specification xsi:type="stoex:DoubleLiteral" value="50000000.0"/>
+          </contents>
+          <contents property="//@fragments.1/@contents.7/@definitions.1" referencedElement="//@fragments.1/@contents.3"/>
+        </initialization>
+      </contents>
+    </contents>
+    <contents xsi:type="language:ResourceContainer" name="DatabaseServer">
+      <contents xsi:type="language:ProcessingResource" name="CPU" type="//@fragments.1/@contents.6">
+        <initialization>
+          <contents property="//@fragments.1/@contents.6/@definitions.0">
+            <specification xsi:type="stoex:DoubleLiteral" value="1000000000.0"/>
+          </contents>
+          <contents property="//@fragments.1/@contents.6/@definitions.1" referencedElement="//@fragments.1/@contents.4"/>
+        </initialization>
+      </contents>
+      <contents xsi:type="language:ProcessingResource" name="HDD" type="//@fragments.1/@contents.7">
+        <initialization>
+          <contents property="//@fragments.1/@contents.7/@definitions.0">
+            <specification xsi:type="stoex:DoubleLiteral" value="600000000.0"/>
+          </contents>
+          <contents property="//@fragments.1/@contents.7/@definitions.1" referencedElement="//@fragments.1/@contents.3"/>
+        </initialization>
+      </contents>
+    </contents>
+    <contents xsi:type="language:LinkingResource" name="LAN" type="//@fragments.1/@contents.9" connected="//@fragments.3/@contents.0 //@fragments.3/@contents.1">
+      <initialization>
+        <contents property="//@fragments.1/@contents.9/@definitions.1">
+          <specification xsi:type="stoex:DoubleLiteral" value="0.07"/>
+        </contents>
+        <contents property="//@fragments.1/@contents.9/@definitions.0">
+          <specification xsi:type="stoex:DoubleLiteral" value="6250000.0"/>
+        </contents>
+      </initialization>
+    </contents>
+  </fragments>
+  <fragments xsi:type="language:Repository" name="repository_XRNTF">
+    <contents xsi:type="language:PrimitiveDatatype" name="Integer"/>
+    <contents xsi:type="language:PrimitiveDatatype" name="String" type="STRING"/>
+    <contents xsi:type="language:PrimitiveDatatype" name="Boolean" type="BOOL"/>
+    <contents xsi:type="language:PrimitiveDatatype" name="Double" type="DOUBLE"/>
+    <contents xsi:type="language:DomainInterface" name="interface_YLSSR">
+      <contents xsi:type="language:OperationSignature" name="operation_ZFIPL">
+        <parameters name="param0" type="//@fragments.4/@contents.0"/>
+        <parameters name="param1" type="//@fragments.4/@contents.2"/>
+      </contents>
+      <contents xsi:type="language:OperationSignature" name="operation_LJKUH">
+        <parameters name="param0" type="//@fragments.4/@contents.2"/>
+        <parameters name="param1" type="//@fragments.4/@contents.1"/>
+      </contents>
+    </contents>
+    <contents xsi:type="language:DomainInterface" name="interface_WAQUF">
+      <contents xsi:type="language:OperationSignature" name="operation_DQEDO">
+        <parameters name="param0" type="//@fragments.4/@contents.1"/>
+        <parameters name="param1" type="//@fragments.4/@contents.3"/>
+      </contents>
+      <contents xsi:type="language:OperationSignature" name="operation_SQXUJ">
+        <parameters name="param0" type="//@fragments.4/@contents.1"/>
+        <parameters name="param1" type="//@fragments.4/@contents.1"/>
+      </contents>
+      <contents xsi:type="language:OperationSignature" name="operation_PUPFM">
+        <parameters name="param0" type="//@fragments.4/@contents.3"/>
+      </contents>
+      <contents xsi:type="language:OperationSignature" name="operation_IBVLP">
+        <parameters name="param0" type="//@fragments.4/@contents.0"/>
+        <parameters name="param1" type="//@fragments.4/@contents.0"/>
+      </contents>
+      <contents xsi:type="language:OperationSignature" name="operation_QYRYI">
+        <parameters name="param0" type="//@fragments.4/@contents.0"/>
+      </contents>
+    </contents>
+    <contents xsi:type="language:DomainInterface" name="interface_YBEUS">
+      <contents xsi:type="language:OperationSignature" name="operation_LYYTS"/>
+      <contents xsi:type="language:OperationSignature" name="operation_NSKAF"/>
+      <contents xsi:type="language:OperationSignature" name="operation_EXTEP">
+        <parameters name="param0" type="//@fragments.4/@contents.3"/>
+      </contents>
+      <contents xsi:type="language:OperationSignature" name="operation_CMQFS">
+        <parameters name="param0" type="//@fragments.4/@contents.1"/>
+        <parameters name="param1" type="//@fragments.4/@contents.3"/>
+        <parameters name="param2" type="//@fragments.4/@contents.0"/>
+      </contents>
+      <contents xsi:type="language:OperationSignature" name="operation_MUZZL">
+        <parameters name="param0" type="//@fragments.4/@contents.3"/>
+      </contents>
+    </contents>
+    <contents xsi:type="language:DomainInterface" name="interface_AXOLQ">
+      <contents xsi:type="language:OperationSignature" name="operation_YYIHX">
+        <parameters name="param0" type="//@fragments.4/@contents.3"/>
+      </contents>
+    </contents>
+    <contents xsi:type="language:DomainInterface" name="interface_OEWOD">
+      <contents xsi:type="language:OperationSignature" name="operation_EHNHX">
+        <parameters name="param0" type="//@fragments.4/@contents.2"/>
+        <parameters name="param1" type="//@fragments.4/@contents.1"/>
+      </contents>
+      <contents xsi:type="language:OperationSignature" name="operation_FCUJK"/>
+    </contents>
+    <contents xsi:type="language:Component" name="component_FIQOA">
+      <contents xsi:type="language:DomainInterfaceProvidedRole" name="provided_OOUKY" type="//@fragments.4/@contents.4"/>
+      <contents xsi:type="language:DomainInterfaceProvidedRole" name="provided_YZYMW" type="//@fragments.4/@contents.7"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="required_TYMCC" type="//@fragments.4/@contents.6"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="required_FOVWP" type="//@fragments.4/@contents.5"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="cpu" type="//@fragments.1/@contents.0"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="hdd" type="//@fragments.1/@contents.1"/>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.9/@contents.0" signatur="//@fragments.4/@contents.4/@contents.0">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.9/@contents.5" signature="//@fragments.1/@contents.1/@contents.1">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="91.34"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.9/@contents.0" signatur="//@fragments.4/@contents.4/@contents.1">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.9/@contents.2" signature="//@fragments.4/@contents.6/@contents.4">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="44.91"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.9/@contents.1" signatur="//@fragments.4/@contents.7/@contents.0">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.9/@contents.2" signature="//@fragments.4/@contents.6/@contents.2">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="78.58"/>
+          </parameters>
+        </contents>
+      </contents>
+    </contents>
+    <contents xsi:type="language:Component" name="component_KSKMG">
+      <contents xsi:type="language:DomainInterfaceProvidedRole" name="provided_LUVMS" type="//@fragments.4/@contents.8"/>
+      <contents xsi:type="language:DomainInterfaceProvidedRole" name="provided_ZWNQI" type="//@fragments.4/@contents.6"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="required_ZSMOH" type="//@fragments.4/@contents.5"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="required_MOWGO" type="//@fragments.4/@contents.4"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="cpu" type="//@fragments.1/@contents.0"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="hdd" type="//@fragments.1/@contents.1"/>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.10/@contents.0" signatur="//@fragments.4/@contents.8/@contents.0">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.10/@contents.4" signature="//@fragments.1/@contents.0/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="65.54"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.10/@contents.0" signatur="//@fragments.4/@contents.8/@contents.1">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.10/@contents.5" signature="//@fragments.1/@contents.1/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="52.54"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.10/@contents.1" signatur="//@fragments.4/@contents.6/@contents.0">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.10/@contents.3" signature="//@fragments.4/@contents.4/@contents.1">
+          <parameters>
+            <specification xsi:type="stoex:BoolLiteral" value="true"/>
+          </parameters>
+          <parameters>
+            <specification xsi:type="stoex:StringLiteral" value="DHfKY"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.10/@contents.1" signatur="//@fragments.4/@contents.6/@contents.1">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.10/@contents.3" signature="//@fragments.4/@contents.4/@contents.1">
+          <parameters>
+            <specification xsi:type="stoex:BoolLiteral"/>
+          </parameters>
+          <parameters>
+            <specification xsi:type="stoex:StringLiteral" value="YdyGAGm0unfcX4"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.10/@contents.1" signatur="//@fragments.4/@contents.6/@contents.2">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.10/@contents.2" signature="//@fragments.4/@contents.5/@contents.2">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="13.25"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.10/@contents.1" signatur="//@fragments.4/@contents.6/@contents.3">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.10/@contents.5" signature="//@fragments.1/@contents.1/@contents.1">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="75.35"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.10/@contents.1" signatur="//@fragments.4/@contents.6/@contents.4">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.10/@contents.5" signature="//@fragments.1/@contents.1/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="94.7"/>
+          </parameters>
+        </contents>
+      </contents>
+    </contents>
+    <contents xsi:type="language:Component" name="component_LKSRG">
+      <contents xsi:type="language:DomainInterfaceProvidedRole" name="provided_HKEZK" type="//@fragments.4/@contents.4"/>
+      <contents xsi:type="language:DomainInterfaceProvidedRole" name="provided_LGMQA" type="//@fragments.4/@contents.8"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="required_WXZDH" type="//@fragments.4/@contents.7"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="cpu" type="//@fragments.1/@contents.0"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="hdd" type="//@fragments.1/@contents.1"/>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.11/@contents.0" signatur="//@fragments.4/@contents.4/@contents.0">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.11/@contents.4" signature="//@fragments.1/@contents.1/@contents.1">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="41.37"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.11/@contents.0" signatur="//@fragments.4/@contents.4/@contents.1">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.11/@contents.2" signature="//@fragments.4/@contents.7/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="87.38"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.11/@contents.1" signatur="//@fragments.4/@contents.8/@contents.0">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.11/@contents.3" signature="//@fragments.1/@contents.0/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="9.25"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.11/@contents.1" signatur="//@fragments.4/@contents.8/@contents.1">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.11/@contents.4" signature="//@fragments.1/@contents.1/@contents.1">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="48.68"/>
+          </parameters>
+        </contents>
+      </contents>
+    </contents>
+    <contents xsi:type="language:Component" name="component_HEMST">
+      <contents xsi:type="language:DomainInterfaceProvidedRole" name="provided_KVUMM" type="//@fragments.4/@contents.5"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="required_KALHF" type="//@fragments.4/@contents.7"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="required_MOQMJ" type="//@fragments.4/@contents.4"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="cpu" type="//@fragments.1/@contents.0"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="hdd" type="//@fragments.1/@contents.1"/>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.12/@contents.0" signatur="//@fragments.4/@contents.5/@contents.0">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.12/@contents.4" signature="//@fragments.1/@contents.1/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="81.62"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.12/@contents.0" signatur="//@fragments.4/@contents.5/@contents.1">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.12/@contents.1" signature="//@fragments.4/@contents.7/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="43.31"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.12/@contents.0" signatur="//@fragments.4/@contents.5/@contents.2">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.12/@contents.3" signature="//@fragments.1/@contents.0/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="79.86"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.12/@contents.0" signatur="//@fragments.4/@contents.5/@contents.3">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.12/@contents.4" signature="//@fragments.1/@contents.1/@contents.1">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="71.08"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.12/@contents.0" signatur="//@fragments.4/@contents.5/@contents.4">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.12/@contents.2" signature="//@fragments.4/@contents.4/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:IntLiteral" value="59"/>
+          </parameters>
+          <parameters>
+            <specification xsi:type="stoex:BoolLiteral"/>
+          </parameters>
+        </contents>
+      </contents>
+    </contents>
+    <contents xsi:type="language:Component" name="component_BRRQF">
+      <contents xsi:type="language:DomainInterfaceProvidedRole" name="provided_NSWWE" type="//@fragments.4/@contents.7"/>
+      <contents xsi:type="language:DomainInterfaceProvidedRole" name="provided_DMUYH" type="//@fragments.4/@contents.6"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="required_XVGEW" type="//@fragments.4/@contents.8"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="cpu" type="//@fragments.1/@contents.0"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="hdd" type="//@fragments.1/@contents.1"/>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.13/@contents.0" signatur="//@fragments.4/@contents.7/@contents.0">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.13/@contents.2" signature="//@fragments.4/@contents.8/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:BoolLiteral" value="true"/>
+          </parameters>
+          <parameters>
+            <specification xsi:type="stoex:StringLiteral" value="j2L5oP"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.13/@contents.1" signatur="//@fragments.4/@contents.6/@contents.0">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.13/@contents.3" signature="//@fragments.1/@contents.0/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="77.3"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.13/@contents.1" signatur="//@fragments.4/@contents.6/@contents.1">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.13/@contents.4" signature="//@fragments.1/@contents.1/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="57.5"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.13/@contents.1" signatur="//@fragments.4/@contents.6/@contents.2">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.13/@contents.3" signature="//@fragments.1/@contents.0/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="70.76"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.13/@contents.1" signatur="//@fragments.4/@contents.6/@contents.3">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.13/@contents.4" signature="//@fragments.1/@contents.1/@contents.1">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="29.77"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.13/@contents.1" signatur="//@fragments.4/@contents.6/@contents.4">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.13/@contents.2" signature="//@fragments.4/@contents.8/@contents.1"/>
+      </contents>
+    </contents>
+    <contents xsi:type="language:Component" name="component_NAALH">
+      <contents xsi:type="language:DomainInterfaceProvidedRole" name="provided_YADAM" type="//@fragments.4/@contents.6"/>
+      <contents xsi:type="language:DomainInterfaceProvidedRole" name="provided_LOQDY" type="//@fragments.4/@contents.5"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="required_SQKIK" type="//@fragments.4/@contents.4"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="required_HXQKS" type="//@fragments.4/@contents.7"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="cpu" type="//@fragments.1/@contents.0"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="hdd" type="//@fragments.1/@contents.1"/>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.14/@contents.0" signatur="//@fragments.4/@contents.6/@contents.0">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.14/@contents.4" signature="//@fragments.1/@contents.0/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="82.31"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.14/@contents.0" signatur="//@fragments.4/@contents.6/@contents.1">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.14/@contents.2" signature="//@fragments.4/@contents.4/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:IntLiteral" value="49"/>
+          </parameters>
+          <parameters>
+            <specification xsi:type="stoex:BoolLiteral"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.14/@contents.0" signatur="//@fragments.4/@contents.6/@contents.2">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.14/@contents.3" signature="//@fragments.4/@contents.7/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="19.54"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.14/@contents.0" signatur="//@fragments.4/@contents.6/@contents.3">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.14/@contents.4" signature="//@fragments.1/@contents.0/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="87.13"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.14/@contents.0" signatur="//@fragments.4/@contents.6/@contents.4">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.14/@contents.5" signature="//@fragments.1/@contents.1/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="97.57"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.14/@contents.1" signatur="//@fragments.4/@contents.5/@contents.0">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.14/@contents.5" signature="//@fragments.1/@contents.1/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="64.62"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.14/@contents.1" signatur="//@fragments.4/@contents.5/@contents.1">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.14/@contents.3" signature="//@fragments.4/@contents.7/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="6.89"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.14/@contents.1" signatur="//@fragments.4/@contents.5/@contents.2">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.14/@contents.4" signature="//@fragments.1/@contents.0/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="36.14"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.14/@contents.1" signatur="//@fragments.4/@contents.5/@contents.3">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.14/@contents.2" signature="//@fragments.4/@contents.4/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:IntLiteral" value="88"/>
+          </parameters>
+          <parameters>
+            <specification xsi:type="stoex:BoolLiteral" value="true"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.14/@contents.1" signatur="//@fragments.4/@contents.5/@contents.4">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.14/@contents.2" signature="//@fragments.4/@contents.4/@contents.1">
+          <parameters>
+            <specification xsi:type="stoex:BoolLiteral" value="true"/>
+          </parameters>
+          <parameters>
+            <specification xsi:type="stoex:StringLiteral" value="6myXM"/>
+          </parameters>
+        </contents>
+      </contents>
+    </contents>
+    <contents xsi:type="language:Component" name="component_OKPQK">
+      <contents xsi:type="language:DomainInterfaceProvidedRole" name="provided_HWRDV" type="//@fragments.4/@contents.8"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="required_ZPNMB" type="//@fragments.4/@contents.7"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="required_LCENO" type="//@fragments.4/@contents.5"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="cpu" type="//@fragments.1/@contents.0"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="hdd" type="//@fragments.1/@contents.1"/>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.15/@contents.0" signatur="//@fragments.4/@contents.8/@contents.0">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.15/@contents.1" signature="//@fragments.4/@contents.7/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="18.31"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.15/@contents.0" signatur="//@fragments.4/@contents.8/@contents.1">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.15/@contents.2" signature="//@fragments.4/@contents.5/@contents.1">
+          <parameters>
+            <specification xsi:type="stoex:StringLiteral" value="WZYpMD"/>
+          </parameters>
+          <parameters>
+            <specification xsi:type="stoex:StringLiteral" value="r7SYIzn"/>
+          </parameters>
+        </contents>
+      </contents>
+    </contents>
+    <contents xsi:type="language:Component" name="component_NOGMF">
+      <contents xsi:type="language:DomainInterfaceProvidedRole" name="provided_EXMDT" type="//@fragments.4/@contents.4"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="required_HFJJV" type="//@fragments.4/@contents.6"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="cpu" type="//@fragments.1/@contents.0"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="hdd" type="//@fragments.1/@contents.1"/>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.16/@contents.0" signatur="//@fragments.4/@contents.4/@contents.0">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.16/@contents.3" signature="//@fragments.1/@contents.1/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="68.41"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.16/@contents.0" signatur="//@fragments.4/@contents.4/@contents.1">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.16/@contents.1" signature="//@fragments.4/@contents.6/@contents.4">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="61.45"/>
+          </parameters>
+        </contents>
+      </contents>
+    </contents>
+    <contents xsi:type="language:Component" name="component_TOWPN">
+      <contents xsi:type="language:DomainInterfaceProvidedRole" name="provided_ZCZSZ" type="//@fragments.4/@contents.7"/>
+      <contents xsi:type="language:DomainInterfaceProvidedRole" name="provided_LXAPO" type="//@fragments.4/@contents.8"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="required_YYWOV" type="//@fragments.4/@contents.4"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="required_SZICI" type="//@fragments.4/@contents.5"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="cpu" type="//@fragments.1/@contents.0"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="hdd" type="//@fragments.1/@contents.1"/>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.17/@contents.0" signatur="//@fragments.4/@contents.7/@contents.0">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.17/@contents.2" signature="//@fragments.4/@contents.4/@contents.1">
+          <parameters>
+            <specification xsi:type="stoex:BoolLiteral" value="true"/>
+          </parameters>
+          <parameters>
+            <specification xsi:type="stoex:StringLiteral" value="8QNEwOltBKa9DWs"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.17/@contents.1" signatur="//@fragments.4/@contents.8/@contents.0">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.17/@contents.3" signature="//@fragments.4/@contents.5/@contents.1">
+          <parameters>
+            <specification xsi:type="stoex:StringLiteral" value="iKKGGp5Lkj"/>
+          </parameters>
+          <parameters>
+            <specification xsi:type="stoex:StringLiteral" value="XZPezC"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.17/@contents.1" signatur="//@fragments.4/@contents.8/@contents.1">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.17/@contents.2" signature="//@fragments.4/@contents.4/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:IntLiteral" value="37"/>
+          </parameters>
+          <parameters>
+            <specification xsi:type="stoex:BoolLiteral" value="true"/>
+          </parameters>
+        </contents>
+      </contents>
+    </contents>
+    <contents xsi:type="language:Component" name="component_HAGHF">
+      <contents xsi:type="language:DomainInterfaceProvidedRole" name="provided_AUDAH" type="//@fragments.4/@contents.5"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="required_BENVO" type="//@fragments.4/@contents.6"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="required_MEDVI" type="//@fragments.4/@contents.8"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="cpu" type="//@fragments.1/@contents.0"/>
+      <contents xsi:type="language:InterfaceRequiredRole" name="hdd" type="//@fragments.1/@contents.1"/>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.18/@contents.0" signatur="//@fragments.4/@contents.5/@contents.0">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.18/@contents.3" signature="//@fragments.1/@contents.0/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="98.04"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.18/@contents.0" signatur="//@fragments.4/@contents.5/@contents.1">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.18/@contents.2" signature="//@fragments.4/@contents.8/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:BoolLiteral"/>
+          </parameters>
+          <parameters>
+            <specification xsi:type="stoex:StringLiteral" value="AhSI8"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.18/@contents.0" signatur="//@fragments.4/@contents.5/@contents.2">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.18/@contents.1" signature="//@fragments.4/@contents.6/@contents.4">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="61.72"/>
+          </parameters>
+        </contents>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.18/@contents.0" signatur="//@fragments.4/@contents.5/@contents.3">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.18/@contents.1" signature="//@fragments.4/@contents.6/@contents.1"/>
+      </contents>
+      <contents xsi:type="language:SEFF" role="//@fragments.4/@contents.18/@contents.0" signatur="//@fragments.4/@contents.5/@contents.4">
+        <contents xsi:type="language:SEFFCallAction" role="//@fragments.4/@contents.18/@contents.4" signature="//@fragments.1/@contents.1/@contents.0">
+          <parameters>
+            <specification xsi:type="stoex:DoubleLiteral" value="74.74"/>
+          </parameters>
+        </contents>
+      </contents>
+    </contents>
+  </fragments>
+  <fragments xsi:type="language:System" name="system_UEOMN">
+    <contents xsi:type="language:AssemblyContext" name="assembly_JIWAV" component="//@fragments.4/@contents.9"/>
+    <contents xsi:type="language:AssemblyContext" name="assembly_GHIOL" component="//@fragments.4/@contents.10"/>
+    <contents xsi:type="language:AssemblyContext" name="assembly_SEQNT" component="//@fragments.4/@contents.11"/>
+    <contents xsi:type="language:AssemblyContext" name="assembly_MEQFM" component="//@fragments.4/@contents.12"/>
+    <contents xsi:type="language:AssemblyContext" name="assembly_VRQUK" component="//@fragments.4/@contents.13"/>
+    <contents xsi:type="language:AssemblyContext" name="assembly_GTFKC" component="//@fragments.4/@contents.14"/>
+    <contents xsi:type="language:AssemblyContext" name="assembly_KBDHW" component="//@fragments.4/@contents.15"/>
+    <contents xsi:type="language:AssemblyContext" name="assembly_AYYKU" component="//@fragments.4/@contents.16"/>
+    <contents xsi:type="language:AssemblyContext" name="assembly_LLSTP" component="//@fragments.4/@contents.17"/>
+    <contents xsi:type="language:AssemblyContext" name="assembly_AQMJP" component="//@fragments.4/@contents.18"/>
+    <contents xsi:type="language:Connector" from="//@fragments.5/@contents.1" to="//@fragments.5/@contents.0" requiringRole="//@fragments.4/@contents.9/@contents.2"/>
+    <contents xsi:type="language:Connector" from="//@fragments.5/@contents.9" to="//@fragments.5/@contents.0" requiringRole="//@fragments.4/@contents.9/@contents.3"/>
+    <contents xsi:type="language:Connector" from="//@fragments.5/@contents.5" to="//@fragments.5/@contents.1" requiringRole="//@fragments.4/@contents.10/@contents.2"/>
+    <contents xsi:type="language:Connector" from="//@fragments.5/@contents.7" to="//@fragments.5/@contents.1" requiringRole="//@fragments.4/@contents.10/@contents.3"/>
+    <contents xsi:type="language:Connector" from="//@fragments.5/@contents.8" to="//@fragments.5/@contents.2" requiringRole="//@fragments.4/@contents.11/@contents.2"/>
+    <contents xsi:type="language:Connector" from="//@fragments.5/@contents.8" to="//@fragments.5/@contents.3" requiringRole="//@fragments.4/@contents.12/@contents.1"/>
+    <contents xsi:type="language:Connector" from="//@fragments.5/@contents.2" to="//@fragments.5/@contents.3" requiringRole="//@fragments.4/@contents.12/@contents.2"/>
+    <contents xsi:type="language:Connector" from="//@fragments.5/@contents.1" to="//@fragments.5/@contents.4" requiringRole="//@fragments.4/@contents.13/@contents.2"/>
+    <contents xsi:type="language:Connector" from="//@fragments.5/@contents.7" to="//@fragments.5/@contents.5" requiringRole="//@fragments.4/@contents.14/@contents.2"/>
+    <contents xsi:type="language:Connector" from="//@fragments.5/@contents.8" to="//@fragments.5/@contents.5" requiringRole="//@fragments.4/@contents.14/@contents.3"/>
+    <contents xsi:type="language:Connector" from="//@fragments.5/@contents.4" to="//@fragments.5/@contents.6" requiringRole="//@fragments.4/@contents.15/@contents.1"/>
+    <contents xsi:type="language:Connector" from="//@fragments.5/@contents.3" to="//@fragments.5/@contents.6" requiringRole="//@fragments.4/@contents.15/@contents.2"/>
+    <contents xsi:type="language:Connector" from="//@fragments.5/@contents.1" to="//@fragments.5/@contents.7" requiringRole="//@fragments.4/@contents.16/@contents.1"/>
+    <contents xsi:type="language:Connector" from="//@fragments.5/@contents.2" to="//@fragments.5/@contents.8" requiringRole="//@fragments.4/@contents.17/@contents.2"/>
+    <contents xsi:type="language:Connector" from="//@fragments.5/@contents.5" to="//@fragments.5/@contents.8" requiringRole="//@fragments.4/@contents.17/@contents.3"/>
+    <contents xsi:type="language:Connector" from="//@fragments.5/@contents.5" to="//@fragments.5/@contents.9" requiringRole="//@fragments.4/@contents.18/@contents.1"/>
+    <contents xsi:type="language:Connector" from="//@fragments.5/@contents.2" to="//@fragments.5/@contents.9" requiringRole="//@fragments.4/@contents.18/@contents.2"/>
+    <contents xsi:type="language:SystemProvidedRole" name="system_provided_POCSM" type="//@fragments.4/@contents.7" to="//@fragments.5/@contents.0"/>
+    <contents xsi:type="language:SystemProvidedRole" name="system_provided_JOQMJ" type="//@fragments.4/@contents.8" to="//@fragments.5/@contents.1"/>
+    <contents xsi:type="language:SystemProvidedRole" name="system_provided_LWRKR" type="//@fragments.4/@contents.5" to="//@fragments.5/@contents.5"/>
+  </fragments>
+  <fragments xsi:type="language:Allocation" name="allocation_FPGHF">
+    <contents xsi:type="language:AllocationContext" name="alloc_RNQPS">
+      <spec container="//@fragments.3/@contents.0" assemblies="//@fragments.5/@contents.2 //@fragments.5/@contents.8 //@fragments.5/@contents.3 //@fragments.5/@contents.6 //@fragments.5/@contents.5"/>
+    </contents>
+    <contents xsi:type="language:AllocationContext" name="alloc_HZXIM">
+      <spec container="//@fragments.3/@contents.1" assemblies="//@fragments.5/@contents.4 //@fragments.5/@contents.0 //@fragments.5/@contents.7 //@fragments.5/@contents.9 //@fragments.5/@contents.1"/>
+    </contents>
+  </fragments>
+  <fragments xsi:type="language:Usage" name="usage_EYXZR">
+    <contents xsi:type="language:UsageScenario" name="scenario_MWIOL">
+      <workload xsi:type="language:OpenWorkload">
+        <interArrivalTime xsi:type="stoex:DoubleLiteral" value="0.05141443099937906"/>
+      </workload>
+      <contents xsi:type="language:EntryLevelSystemCallAction" role="//@fragments.5/@contents.28" signature="//@fragments.4/@contents.8/@contents.1"/>
+      <contents xsi:type="language:EntryLevelSystemCallAction" role="//@fragments.5/@contents.27" signature="//@fragments.4/@contents.7/@contents.0">
+        <parameters>
+          <reference xsi:type="language:AbsoluteReference">
+            <reference referenceName="param0">
+              <innerReference_NamespaceReference xsi:type="stoex:VariableReference" referenceName="VALUE"/>
+            </reference>
+          </reference>
+          <specification xsi:type="stoex:DoubleLiteral" value="17.02"/>
+        </parameters>
+      </contents>
+      <contents xsi:type="language:EntryLevelSystemCallAction" role="//@fragments.5/@contents.29" signature="//@fragments.4/@contents.5/@contents.3">
+        <parameters>
+          <reference xsi:type="language:AbsoluteReference">
+            <reference referenceName="param0">
+              <innerReference_NamespaceReference xsi:type="stoex:VariableReference" referenceName="VALUE"/>
+            </reference>
+          </reference>
+          <specification xsi:type="stoex:IntLiteral" value="44"/>
+        </parameters>
+        <parameters>
+          <reference xsi:type="language:AbsoluteReference">
+            <reference referenceName="param1">
+              <innerReference_NamespaceReference xsi:type="stoex:VariableReference" referenceName="VALUE"/>
+            </reference>
+          </reference>
+          <specification xsi:type="stoex:IntLiteral" value="67"/>
+        </parameters>
+      </contents>
+    </contents>
+  </fragments>
+</language:Model>

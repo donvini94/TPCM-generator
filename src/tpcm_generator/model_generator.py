@@ -513,6 +513,8 @@ class ModelGenerator:
                     params = []
                     for param in signature.parameters:
                         # Create random parameter values based on parameter type
+                        namespace_reference = self.expr_factory.create_namespace_reference(param.name, self.expr_factory.create_variable_reference("VALUE"))
+                        absolute_reference = self.model_factory.create_absolute_reference(namespace_reference)
                         if param.type.eClass.name == "PrimitiveDatatype":
                             if param.type.type.name == "INT":
                                 value = random.randint(
@@ -521,6 +523,7 @@ class ModelGenerator:
                                 )
                                 params.append(
                                     self.model_factory.create_parameter_specification(
+                                        reference=absolute_reference,
                                         specification=self.expr_factory.create_int_literal(
                                             value
                                         )
@@ -533,6 +536,7 @@ class ModelGenerator:
                                 ), 2)
                                 params.append(
                                     self.model_factory.create_parameter_specification(
+                                        reference=absolute_reference,
                                         specification=self.expr_factory.create_double_literal(
                                             value
                                         )
@@ -541,6 +545,7 @@ class ModelGenerator:
                             elif param.type.type.name == "BOOL":
                                 params.append(
                                     self.model_factory.create_parameter_specification(
+                                        reference=absolute_reference,
                                         specification=self.expr_factory.create_bool_literal(
                                             random.choice([True, False])
                                         )
@@ -550,6 +555,7 @@ class ModelGenerator:
                                 # Default for STRING and other types
                                 params.append(
                                     self.model_factory.create_parameter_specification(
+                                        reference=absolute_reference,
                                         specification=self.expr_factory.create_string_literal(
                                             "1"
                                         )
