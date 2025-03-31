@@ -13,3 +13,7 @@ htmlcov
 
 *.xlsx
 *.json
+
+generated/
+input/
+output/
