@@ -128,106 +128,106 @@ class _ResourceEnvironmentGenerator:
 
         app_cpu.initialization = app_cpu_init
 
-        # Create ApplicationServer HDD
-        app_hdd = self._PCM.ProcessingResource(name="HDD")
-        app_hdd.type = hdd_resource
-
-        # Initialize HDD properties
-        app_hdd_init = self._PCM.Initialization()
-
-        # Processing rate initializer
-        app_hdd_rate = self._PCM.PropertyInitializer()
-        app_hdd_rate.property = hdd_resource.definitions[0]  # processingRate
-        app_hdd_rate.specification = self._create_double_literal(50 * 1000 * 1000)
-        app_hdd_init.contents.append(app_hdd_rate)
-
-        # Scheduling policy initializer
-        app_hdd_sched = self._PCM.PropertyInitializer()
-        app_hdd_sched.property = hdd_resource.definitions[1]  # schedulingPolicy
-        app_hdd_sched.referencedElement = fcfs_entity
-        app_hdd_init.contents.append(app_hdd_sched)
-
-        app_hdd.initialization = app_hdd_init
+        #        # Create ApplicationServer HDD
+        #        app_hdd = self._PCM.ProcessingResource(name="HDD")
+        #        app_hdd.type = hdd_resource
+        #
+        #        # Initialize HDD properties
+        #        app_hdd_init = self._PCM.Initialization()
+        #
+        #        # Processing rate initializer
+        #        app_hdd_rate = self._PCM.PropertyInitializer()
+        #        app_hdd_rate.property = hdd_resource.definitions[0]  # processingRate
+        #        app_hdd_rate.specification = self._create_double_literal(50 * 1000 * 1000)
+        #        app_hdd_init.contents.append(app_hdd_rate)
+        #
+        #        # Scheduling policy initializer
+        #        app_hdd_sched = self._PCM.PropertyInitializer()
+        #        app_hdd_sched.property = hdd_resource.definitions[1]  # schedulingPolicy
+        #        app_hdd_sched.referencedElement = fcfs_entity
+        #        app_hdd_init.contents.append(app_hdd_sched)
+        #
+        #        app_hdd.initialization = app_hdd_init
 
         # Add resources to ApplicationServer
-        app_server.contents.extend([app_cpu, app_hdd])
+        app_server.contents.extend([app_cpu])
 
-        # === Create DatabaseServer container ===
-        db_server = self._PCM.ResourceContainer(name="DatabaseServer")
-
-        # Create DatabaseServer CPU
-        db_cpu = self._PCM.ProcessingResource(name="CPU")
-        db_cpu.type = cpu_resource
-
-        # Initialize CPU properties
-        db_cpu_init = self._PCM.Initialization()
-
-        # Processing rate initializer
-        db_cpu_rate = self._PCM.PropertyInitializer()
-        db_cpu_rate.property = cpu_resource.definitions[0]  # processingRate
-        db_cpu_rate.specification = self._create_double_literal(1000 * 1000 * 1000)
-        db_cpu_init.contents.append(db_cpu_rate)
-
-        # Scheduling policy initializer
-        db_cpu_sched = self._PCM.PropertyInitializer()
-        db_cpu_sched.property = cpu_resource.definitions[1]  # schedulingPolicy
-        db_cpu_sched.referencedElement = ps_entity
-        db_cpu_init.contents.append(db_cpu_sched)
-
-        db_cpu.initialization = db_cpu_init
-
-        # Create DatabaseServer HDD
-        db_hdd = self._PCM.ProcessingResource(name="HDD")
-        db_hdd.type = hdd_resource
-
-        # Initialize HDD properties
-        db_hdd_init = self._PCM.Initialization()
-
-        # Processing rate initializer
-        db_hdd_rate = self._PCM.PropertyInitializer()
-        db_hdd_rate.property = hdd_resource.definitions[0]  # processingRate
-        db_hdd_rate.specification = self._create_double_literal(600 * 1000 * 1000)
-        db_hdd_init.contents.append(db_hdd_rate)
-
-        # Scheduling policy initializer
-        db_hdd_sched = self._PCM.PropertyInitializer()
-        db_hdd_sched.property = hdd_resource.definitions[1]  # schedulingPolicy
-        db_hdd_sched.referencedElement = fcfs_entity
-        db_hdd_init.contents.append(db_hdd_sched)
-
-        db_hdd.initialization = db_hdd_init
-
-        # Add resources to DatabaseServer
-        db_server.contents.extend([db_cpu, db_hdd])
-
-        # === Create LAN link ===
-        lan = self._PCM.LinkingResource(name="LAN")
-        lan.type = ethernet
-
-        # Initialize LAN properties
-        lan_init = self._PCM.Initialization()
-
-        # Latency initializer - using normal distribution Norm(0.07, 0.03)
-        lan_latency = self._PCM.PropertyInitializer()
-        lan_latency.property = ethernet.definitions[1]  # latency
-        # For simplicity in this iteration, use a double literal with the mean value
-        # since the normal distribution requires more complex setup
-        lan_latency.specification = self._create_double_literal(0.07)
-        lan_init.contents.append(lan_latency)
-
-        # Throughput initializer
-        lan_throughput = self._PCM.PropertyInitializer()
-        lan_throughput.property = ethernet.definitions[0]  # throughput
-        lan_throughput.specification = self._create_double_literal(6.25 * 1000 * 1000)
-        lan_init.contents.append(lan_throughput)
-
-        lan.initialization = lan_init
-
-        # Connect the containers
-        lan.connected.extend([app_server, db_server])
+        #        # === Create DatabaseServer container ===
+        #        db_server = self._PCM.ResourceContainer(name="DatabaseServer")
+        #
+        #        # Create DatabaseServer CPU
+        #        db_cpu = self._PCM.ProcessingResource(name="CPU")
+        #        db_cpu.type = cpu_resource
+        #
+        #        # Initialize CPU properties
+        #        db_cpu_init = self._PCM.Initialization()
+        #
+        #        # Processing rate initializer
+        #        db_cpu_rate = self._PCM.PropertyInitializer()
+        #        db_cpu_rate.property = cpu_resource.definitions[0]  # processingRate
+        #        db_cpu_rate.specification = self._create_double_literal(1000 * 1000 * 1000)
+        #        db_cpu_init.contents.append(db_cpu_rate)
+        #
+        #        # Scheduling policy initializer
+        #        db_cpu_sched = self._PCM.PropertyInitializer()
+        #        db_cpu_sched.property = cpu_resource.definitions[1]  # schedulingPolicy
+        #        db_cpu_sched.referencedElement = ps_entity
+        #        db_cpu_init.contents.append(db_cpu_sched)
+        #
+        #        db_cpu.initialization = db_cpu_init
+        #
+        #        # Create DatabaseServer HDD
+        #        db_hdd = self._PCM.ProcessingResource(name="HDD")
+        #        db_hdd.type = hdd_resource
+        #
+        #        # Initialize HDD properties
+        #        db_hdd_init = self._PCM.Initialization()
+        #
+        #        # Processing rate initializer
+        #        db_hdd_rate = self._PCM.PropertyInitializer()
+        #        db_hdd_rate.property = hdd_resource.definitions[0]  # processingRate
+        #        db_hdd_rate.specification = self._create_double_literal(600 * 1000 * 1000)
+        #        db_hdd_init.contents.append(db_hdd_rate)
+        #
+        #        # Scheduling policy initializer
+        #        db_hdd_sched = self._PCM.PropertyInitializer()
+        #        db_hdd_sched.property = hdd_resource.definitions[1]  # schedulingPolicy
+        #        db_hdd_sched.referencedElement = fcfs_entity
+        #        db_hdd_init.contents.append(db_hdd_sched)
+        #
+        #        db_hdd.initialization = db_hdd_init
+        #
+        #        # Add resources to DatabaseServer
+        #        db_server.contents.extend([db_cpu, db_hdd])
+        #
+        #        # === Create LAN link ===
+        #        lan = self._PCM.LinkingResource(name="LAN")
+        #        lan.type = ethernet
+        #
+        #        # Initialize LAN properties
+        #        lan_init = self._PCM.Initialization()
+        #
+        #        # Latency initializer - using normal distribution Norm(0.07, 0.03)
+        #        lan_latency = self._PCM.PropertyInitializer()
+        #        lan_latency.property = ethernet.definitions[1]  # latency
+        #        # For simplicity in this iteration, use a double literal with the mean value
+        #        # since the normal distribution requires more complex setup
+        #        lan_latency.specification = self._create_double_literal(0.07)
+        #        lan_init.contents.append(lan_latency)
+        #
+        #        # Throughput initializer
+        #        lan_throughput = self._PCM.PropertyInitializer()
+        #        lan_throughput.property = ethernet.definitions[0]  # throughput
+        #        lan_throughput.specification = self._create_double_literal(6.25 * 1000 * 1000)
+        #        lan_init.contents.append(lan_throughput)
+        #
+        #        lan.initialization = lan_init
+        #
+        #        # Connect the containers
+        #        lan.connected.extend([app_server, db_server])
 
         # Add all elements to the resource environment
-        self._resource_env.contents.extend([app_server, db_server, lan])
+        self._resource_env.contents.extend([app_server])
 
     def add_to_model(self, model):
         """Add the resource environment to an existing model.
