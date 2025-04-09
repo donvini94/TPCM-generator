@@ -7,9 +7,6 @@ config = {
     # Component settings
     "min_provided_interfaces_per_component": 1,  # Min provided interfaces per component
     "min_required_interfaces_per_component": 1,  # Min required interfaces per component
-    # Assembly settings
-    "min_assemblies": 2,  # Min assembly contexts in system
-    "max_assemblies": 10,  # Max assembly contexts in system
     # System settings
     "min_exposed_interfaces": 1,  # Min exposed interfaces in system
     "max_exposed_interfaces": 10,  # Max exposed interfaces in system
