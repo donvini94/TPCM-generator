@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-# Create input and output directories if they don't exist
-mkdir -p input output
+# Create output directory if it doesn't exist
+mkdir -p output
 
 # Get number of available CPU cores
 NUM_CORES=$(nproc)
@@ -12,22 +12,8 @@ echo "Detected $NUM_CORES CPU cores, will launch $NUM_CORES parallel containers"
 TEMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
-# Step 1: Run the tpcm-generator container once to generate all TPCM files
+# Generate timestamp for unique container names
 TIMESTAMP=$(date +%Y%m%d%H%M%S)
-TPCM_GENERATOR_NAME="tpcm-generator-$TIMESTAMP"
-
-echo "Starting tpcm-generator container ($TPCM_GENERATOR_NAME)..."
-docker run -v ./input:/tpcm-generator/input --name $TPCM_GENERATOR_NAME registry.dumusstbereitsein.de/tpcm-generator > tpcm-generator.log 2>&1
-
-# Check if the tpcm-generator container completed successfully
-if [ $? -ne 0 ]; then
-  echo "Error: tpcm-generator container ($TPCM_GENERATOR_NAME) failed."
-  docker rm $TPCM_GENERATOR_NAME > /dev/null 2>&1 || true
-  exit 1
-fi
-
-echo "tpcm-generator container ($TPCM_GENERATOR_NAME) finished successfully."
-docker rm $TPCM_GENERATOR_NAME > /dev/null 2>&1 || true
 
 # Find all TPCM files in input directory
 TPCM_FILES=()
@@ -99,9 +85,9 @@ process_tpcm_files() {
   # Run the tpcm2pcm container
   echo "[$core_id] Starting tpcm2pcm container ($TPCM2PCM_NAME)..."
   docker run -v "$CORE_INPUT_DIR":/usr/eclipse/shared \
-             -v "$CORE_OUTPUT_DIR":/usr/eclipse/workspace \
-             --name "$TPCM2PCM_NAME" \
-             registry.dumusstbereitsein.de/tpcm2pcm > "$TEMP_DIR/tpcm2pcm_$core_id.log" 2>&1
+           -v "$CORE_OUTPUT_DIR":/usr/eclipse/workspace \
+           --name "$TPCM2PCM_NAME" \
+           registry.dumusstbereitsein.de/tpcm2pcm > "$TEMP_DIR/tpcm2pcm_$core_id.log" 2>&1
   
   CONTAINER_EXIT_CODE=$?
   
@@ -116,6 +102,9 @@ process_tpcm_files() {
     
   else
     echo "[$core_id] Error: tpcm2pcm container ($TPCM2PCM_NAME) failed with exit code $CONTAINER_EXIT_CODE."
+    # Output the log for troubleshooting
+    echo "[$core_id] Container log:"
+    cat "$TEMP_DIR/tpcm2pcm_$core_id.log"
   fi
   
   # Cleanup container
@@ -140,6 +129,11 @@ done
 echo "Waiting for all tpcm2pcm containers to complete..."
 for pid in "${PIDS[@]}"; do
   wait $pid
+done
+
+# Cleanup core-specific output directories
+for ((i=0; i<NUM_CORES; i++)); do
+  rm -rf "./output/core_$i"
 done
 
 echo "All TPCM files have been processed and converted to PCM files"
