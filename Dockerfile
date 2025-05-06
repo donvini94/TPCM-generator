@@ -18,4 +18,4 @@ COPY	tests/	tpcm-generator/tests/
 RUN	mkdir -p tpcm-generator/output \
 	&& chmod 777 tpcm-generator/output
 WORKDIR	/tpcm-generator
-ENTRYPOINT	["python3","main.py","--models","10000","--convert"]
+ENTRYPOINT	["python3","main.py","--models","100000","--convert"]
