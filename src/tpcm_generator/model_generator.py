@@ -50,6 +50,33 @@ class ModelGenerator:
         self.signatures = []
         self.assembly_contexts = []
         self.resource_containers = []
+        
+        # Initialize metadata tracking
+        self.metadata = {
+            "seed": seed,
+            "config": self.config.copy(),
+            "model_structure": {
+                "interfaces": 0,
+                "components": 0,
+                "signatures": 0,
+                "parameters": 0,
+                "seffs": 0,
+                "seff_actions": 0,
+                "provided_roles": 0,
+                "required_roles": 0,
+                "assembly_contexts": 0,
+                "connectors": 0,
+                "resource_containers": 0,
+                "allocation_contexts": 0,
+                "system_provided_roles": 0,
+                "usage_scenarios": 0,
+                "entry_level_calls": 0
+            },
+            "component_details": [],
+            "interface_details": [],
+            "creation_timestamp": None,
+            "completion_time_seconds": None
+        }
 
     def _create_primitive_types(self, repository):
         """Create primitive datatypes and add them to a repository.
@@ -99,10 +126,16 @@ class ModelGenerator:
             param_type = random.choice(list(self.primitive_types.values()))
             param = self.model_factory.create_parameter(f"param{i}", param_type)
             signature.parameters.append(param)
+            
+            # Track parameter in metadata
+            self.metadata["model_structure"]["parameters"] += 1
 
         # Add to interface
         interface.contents.append(signature)
         self.signatures.append(signature)
+        
+        # Track signature in metadata
+        self.metadata["model_structure"]["signatures"] += 1
 
         return signature
 
@@ -124,20 +157,29 @@ class ModelGenerator:
 
         # Create interfaces
         for i in range(num_interfaces):
-            interface = self.model_factory.create_domain_interface(
-                random_name("interface")
-            )
+            interface_name = random_name("interface")
+            interface = self.model_factory.create_domain_interface(interface_name)
 
             # Add signatures to each interface based on configuration
             sig_count = random.randint(
                 self.config["min_signatures_per_interface"],
                 self.config["max_signatures_per_interface"],
             )
+            
+            interface_signatures = 0
             for j in range(sig_count):
                 self._create_random_signature(interface)
+                interface_signatures += 1
 
             repository.contents.append(interface)
             self.interfaces.append(interface)
+            
+            # Track interface in metadata
+            self.metadata["model_structure"]["interfaces"] += 1
+            self.metadata["interface_details"].append({
+                "name": interface_name,
+                "signature_count": interface_signatures
+            })
 
         interface_provider = UniqueRandomInterfaceSampler(self.interfaces)
 
@@ -173,9 +215,12 @@ class ModelGenerator:
                 required_interfaces
             )
 
-            component = self.model_factory.create_component(random_name("component"))
+            component_name = random_name("component")
+            component = self.model_factory.create_component(component_name)
             provided_roles = []
             required_roles = []
+            component_seffs = 0
+            component_seff_actions = 0
 
             for j in range(len(provided_interfaces)):
                 if self.interfaces:
@@ -185,6 +230,9 @@ class ModelGenerator:
                     )
                     component.contents.append(role)
                     provided_roles.append(role)
+                    
+                    # Track provided role in metadata
+                    self.metadata["model_structure"]["provided_roles"] += 1
 
             for j in range(len(required_interfaces)):
                 if self.interfaces:
@@ -195,6 +243,9 @@ class ModelGenerator:
                     )
                     component.contents.append(role)
                     required_roles.append(role)
+                    
+                    # Track required role in metadata
+                    self.metadata["model_structure"]["required_roles"] += 1
 
             cpu_role = self.model_factory.create_required_role(
                 "cpu", self.std_defs.get_cpu_interface()
@@ -208,11 +259,20 @@ class ModelGenerator:
                     cpu_role,
                 ]
             )  # hdd_role])
+            
+            # Track CPU required role in metadata
+            self.metadata["model_structure"]["required_roles"] += 1
+            
             repository.contents.append(component)
 
             for provided_role in provided_roles:
                 for signatur in provided_role.type.contents:
                     seff = self.model_factory.create_seff(provided_role, signatur)
+                    component_seffs += 1
+                    
+                    # Track SEFF in metadata
+                    self.metadata["model_structure"]["seffs"] += 1
+                    
                     # TODO: Random zwischen 1 und anzahl der rollen in required roles
                     # TODO: 2. Ebene: Anzahl signatures in interfaces von der required role die man gewählt hat
                     required_role = random.choice(required_roles)
@@ -223,6 +283,11 @@ class ModelGenerator:
                     coa = self.model_factory.create_seff_call_action(
                         required_role, required_signature
                     )
+                    component_seff_actions += 1
+                    
+                    # Track SEFF action in metadata
+                    self.metadata["model_structure"]["seff_actions"] += 1
+                    
                     # TODO: Refactor into function
                     for param in parameters:
                         if param.type == self.primitive_types["Integer"]:
@@ -278,7 +343,18 @@ class ModelGenerator:
                             coa.parameters.append(result)
                     seff.contents.append(coa)
                     component.contents.append(seff)
+            
             self.components.append(component)
+            
+            # Track component in metadata
+            self.metadata["model_structure"]["components"] += 1
+            self.metadata["component_details"].append({
+                "name": component_name,
+                "provided_interfaces": len(provided_roles),
+                "required_interfaces": len(required_roles) - 1,  # Subtract CPU role
+                "seffs": component_seffs,
+                "seff_actions": component_seff_actions
+            })
 
         return repository
 
@@ -289,7 +365,8 @@ class ModelGenerator:
             Generated system
         """
         # Create system
-        system = self.model_factory.create_system(random_name("system"))
+        system_name = random_name("system")
+        system = self.model_factory.create_system(system_name)
 
         # Create assembly contexts for all components
         available_components = [c for c in self.components if c.contents]
@@ -303,6 +380,9 @@ class ModelGenerator:
             )
             system.contents.append(assembly)
             self.assembly_contexts.append(assembly)
+            
+            # Track assembly context in metadata
+            self.metadata["model_structure"]["assembly_contexts"] += 1
 
         # Map interfaces to assemblies of components that provide these interfaces
         interface_to_providing_component_map = {}
@@ -322,6 +402,7 @@ class ModelGenerator:
                     required_roles.append((assembly, role))
                     # für jede required role brauche ich eine komponente die diese role provided, connector zwischen diesen interfaces
 
+        connector_count = 0
         for req_assembly, req_role in required_roles:
             # Skip CPU and HDD roles as they're handled separately
             if req_role.name in ["cpu", "hdd"]:
@@ -342,6 +423,10 @@ class ModelGenerator:
 
                 # Only add the connector if we successfully created it
                 system.contents.append(connector)
+                connector_count += 1
+                
+                # Track connector in metadata
+                self.metadata["model_structure"]["connectors"] += 1
 
         # Create system provided roles for some of the provided interfaces
         # (exposing some component interfaces to the outside world)
@@ -352,6 +437,8 @@ class ModelGenerator:
             ),
             len(provided_roles),
         )
+        
+        system_provided_roles_count = 0
         if provided_roles:
             exposed_provided = random.sample(provided_roles, exposed_count)
 
@@ -360,6 +447,18 @@ class ModelGenerator:
                     random_name("system_provided"), role.type, assembly
                 )
                 system.contents.append(system_role)
+                system_provided_roles_count += 1
+                
+                # Track system provided role in metadata
+                self.metadata["model_structure"]["system_provided_roles"] += 1
+
+        # Add system metadata
+        self.metadata["system"] = {
+            "name": system_name,
+            "assembly_contexts": len(self.assembly_contexts),
+            "connectors": connector_count,
+            "system_provided_roles": system_provided_roles_count
+        }
 
         return system
 
@@ -373,10 +472,14 @@ class ModelGenerator:
             Generated allocation
         """
         # Create allocation
-        allocation = self.model_factory.create_allocation(random_name("allocation"))
+        allocation_name = random_name("allocation")
+        allocation = self.model_factory.create_allocation(allocation_name)
 
         # Get the resource containers from the resource environment
         containers = self.resource_env.get_resource_containers()
+        
+        # Track resource containers in metadata
+        self.metadata["model_structure"]["resource_containers"] = len(containers)
 
         if not containers or not system:
             return allocation
@@ -417,6 +520,7 @@ class ModelGenerator:
             start = end
 
         # Create allocation contexts
+        allocation_contexts_count = 0
         for i, group in enumerate(assembly_groups):
             if i < len(containers) and group:
                 container = containers[i]
@@ -424,6 +528,17 @@ class ModelGenerator:
                     random_name("alloc"), group, container
                 )
                 allocation.contents.append(alloc_ctx)
+                allocation_contexts_count += 1
+                
+                # Track allocation context in metadata
+                self.metadata["model_structure"]["allocation_contexts"] += 1
+
+        # Add allocation metadata
+        self.metadata["allocation"] = {
+            "name": allocation_name,
+            "allocation_contexts": allocation_contexts_count,
+            "containers_used": min(num_groups, len(containers))
+        }
 
         return allocation
 
@@ -437,7 +552,8 @@ class ModelGenerator:
             Generated usage model
         """
         # Create usage model
-        usage = self.model_factory.create_usage_model(random_name("usage"))
+        usage_name = random_name("usage")
+        usage = self.model_factory.create_usage_model(usage_name)
 
         # Find system provided roles that can be called
         system_provided_roles = [
@@ -450,8 +566,15 @@ class ModelGenerator:
             return usage
 
         # Create a usage scenario
-        scenario = self.model_factory.create_usage_scenario(random_name("scenario"))
+        scenario_name = random_name("scenario")
+        scenario = self.model_factory.create_usage_scenario(scenario_name)
+        
+        # Track usage scenario in metadata
+        self.metadata["model_structure"]["usage_scenarios"] += 1
 
+        # Record workload type and parameters
+        workload_info = {}
+        
         # Create workload (randomly choose between open and closed workload)
         if random.choice([True, False]):
             # Open workload with exponential distribution
@@ -461,20 +584,23 @@ class ModelGenerator:
             # Create a simple double literal directly
             inter_arrival_time = self.expr_factory.create_double_literal(rate)
             workload = self.model_factory.create_open_workload(inter_arrival_time)
+            workload_info = {"type": "open", "arrival_rate": rate}
         else:
             # Closed workload
             num_users = random.randint(1, self.config["max_user_count"])
-            think_time = self.expr_factory.create_double_literal(
-                random.uniform(
-                    self.config["think_time_min"], self.config["think_time_max"]
-                )
+            think_time_value = random.uniform(
+                self.config["think_time_min"], self.config["think_time_max"]
             )
+            think_time = self.expr_factory.create_double_literal(think_time_value)
             workload = self.model_factory.create_closed_workload(num_users, think_time)
+            workload_info = {"type": "closed", "users": num_users, "think_time": think_time_value}
 
         scenario.workload = workload
 
         # Create entry level system calls to random system provided roles
         call_count = random.randint(self.config["min_calls"], self.config["max_calls"])
+        entry_calls = []
+        
         for _ in range(call_count):
             # Choose random role
             role = random.choice(system_provided_roles)
@@ -489,6 +615,11 @@ class ModelGenerator:
 
                 if signatures:
                     signature = random.choice(signatures)
+                    call_info = {
+                        "role": role.name,
+                        "signature": signature.name,
+                        "parameters": []
+                    }
 
                     # Create parameter specifications for parameters if needed
                     params = []
@@ -505,6 +636,9 @@ class ModelGenerator:
                                 namespace_reference
                             )
                         )
+                        
+                        param_info = {"name": param.name}
+                        
                         if param.type.eClass.name == "PrimitiveDatatype":
                             if param.type.type.name == "INT":
                                 value = random.randint(
@@ -519,6 +653,8 @@ class ModelGenerator:
                                         ),
                                     )
                                 )
+                                param_info.update({"type": "int", "value": value})
+                                
                             elif param.type.type.name == "DOUBLE":
                                 value = round(
                                     random.uniform(
@@ -535,15 +671,20 @@ class ModelGenerator:
                                         ),
                                     )
                                 )
+                                param_info.update({"type": "double", "value": value})
+                                
                             elif param.type.type.name == "BOOL":
+                                bool_value = random.choice([True, False])
                                 params.append(
                                     self.model_factory.create_parameter_specification(
                                         reference=absolute_reference,
                                         specification=self.expr_factory.create_bool_literal(
-                                            random.choice([True, False])
+                                            bool_value
                                         ),
                                     )
                                 )
+                                param_info.update({"type": "bool", "value": bool_value})
+                                
                             else:
                                 # Default for STRING and other types
                                 params.append(
@@ -554,18 +695,46 @@ class ModelGenerator:
                                         ),
                                     )
                                 )
+                                param_info.update({"type": "string", "value": "1"})
+                        
+                        call_info["parameters"].append(param_info)
 
                     # Create entry level system call
                     call = self.model_factory.create_entry_level_system_call(
                         role, signature, params
                     )
                     scenario.contents.append(call)
+                    
+                    # Track entry level call in metadata
+                    self.metadata["model_structure"]["entry_level_calls"] += 1
+                    
+                    entry_calls.append(call_info)
 
         # Add scenario to usage model
         usage.contents.append(scenario)
 
+        # Add usage model metadata
+        self.metadata["usage_model"] = {
+            "name": usage_name,
+            "scenarios": [
+                {
+                    "name": scenario_name,
+                    "workload": workload_info,
+                    "entry_level_calls": entry_calls
+                }
+            ]
+        }
+
         return usage
 
+    def get_metadata(self):
+        """Get the metadata for the generated model.
+        
+        Returns:
+            Dictionary with metadata about the generated model
+        """
+        return self.metadata
+        
     def generate_complete_model(
         self, model_name="generated", num_interfaces=None, num_components=None
     ):
@@ -579,6 +748,14 @@ class ModelGenerator:
         Returns:
             Tuple of (model, model_resource)
         """
+        import time
+        import json
+        import os
+        
+        # Record start time
+        start_time = time.time()
+        self.metadata["creation_timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
+        
         # Create model
         model = self.model_factory.create_model()
 
@@ -597,11 +774,23 @@ class ModelGenerator:
         # Add elements to model
         model.fragments.extend([repository, system, allocation, usage])
 
+        # Record completion time
+        self.metadata["completion_time_seconds"] = round(time.time() - start_time, 3)
+        self.metadata["model_name"] = model_name
+
         # Save model
         # Use the path provided by the caller (which may already include the directory)
         xml_filename = (
             model_name if model_name.endswith(".xml") else f"{model_name}.xml"
         )
         model_resource = save_model(model, xml_filename, self.model_factory.rset)
+        
+        # Save metadata alongside the model
+        metadata_filename = os.path.splitext(xml_filename)[0] + ".metadata"
+        try:
+            with open(metadata_filename, 'w') as f:
+                json.dump(self.metadata, f, indent=2)
+        except Exception as e:
+            print(f"Warning: Failed to save metadata to {metadata_filename}: {e}")
 
         return model, model_resource

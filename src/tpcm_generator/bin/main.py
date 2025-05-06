@@ -105,9 +105,55 @@ def generate_model_process(model_index, total_models, args_dict, model_name=None
             tpcm_path = f"input/{model_name}.tpcm"
             with print_lock:
                 print(f"Converting {output_file} to TPCM format: {tpcm_path}...")
-            if convert_to_tpcm(output_file, tpcm_path):
+            
+            # Try to load the metadata file
+            import json
+            metadata_path = os.path.splitext(output_file)[0] + ".metadata"
+            
+            try:
+                if os.path.exists(metadata_path):
+                    with open(metadata_path, 'r') as f:
+                        metadata = json.load(f)
+                        
+                    # Update metadata with TPCM conversion info
+                    import time
+                    conversion_start = time.time()
+                    conversion_success = convert_to_tpcm(output_file, tpcm_path)
+                    conversion_time = round(time.time() - conversion_start, 3)
+                    
+                    metadata["tpcm_conversion"] = {
+                        "success": conversion_success,
+                        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                        "time_seconds": conversion_time,
+                        "xml_path": output_file,
+                        "tpcm_path": tpcm_path
+                    }
+                    
+                    # Save updated metadata
+                    with open(metadata_path, 'w') as f:
+                        json.dump(metadata, f, indent=2)
+                        
+                    if conversion_success:
+                        # Also copy metadata to the input directory alongside the TPCM file
+                        tpcm_metadata_path = os.path.splitext(tpcm_path)[0] + ".metadata"
+                        with open(tpcm_metadata_path, 'w') as f:
+                            json.dump(metadata, f, indent=2)
+                        
+                        with print_lock:
+                            print(f"Model converted to TPCM format: {tpcm_path}")
+                            print(f"Metadata saved to: {tpcm_metadata_path}")
+                else:
+                    # If metadata file doesn't exist, just do the conversion
+                    if convert_to_tpcm(output_file, tpcm_path):
+                        with print_lock:
+                            print(f"Model converted to TPCM format: {tpcm_path}")
+            except Exception as e:
+                # If there's an error handling metadata, still try the conversion
                 with print_lock:
-                    print(f"Model converted to TPCM format: {tpcm_path}")
+                    print(f"Warning: Error handling metadata: {e}")
+                if convert_to_tpcm(output_file, tpcm_path):
+                    with print_lock:
+                        print(f"Model converted to TPCM format: {tpcm_path}")
 
         return True
     except Exception as e:
