@@ -188,7 +188,6 @@ class ModelGenerator:
 
             for j in range(len(required_interfaces)):
                 if self.interfaces:
-                    # FIXME: Doesn't this mean we can have components that require and provide the same role?
                     # Sebastian: fixed by using the UniqueRandomSampler
                     required_role = required_component_interface_provider.sample()
                     role = self.model_factory.create_required_role(
@@ -200,11 +199,15 @@ class ModelGenerator:
             cpu_role = self.model_factory.create_required_role(
                 "cpu", self.std_defs.get_cpu_interface()
             )
-            hdd_role = self.model_factory.create_required_role(
-                "hdd", self.std_defs.get_hdd_interface()
-            )
-            required_roles.extend([cpu_role, hdd_role])
-            component.contents.extend([cpu_role, hdd_role])
+            # hdd_role = self.model_factory.create_required_role(
+            #    "hdd", self.std_defs.get_hdd_interface()
+            # )
+            required_roles.extend([cpu_role])  # , hdd_role])
+            component.contents.extend(
+                [
+                    cpu_role,
+                ]
+            )  # hdd_role])
             repository.contents.append(component)
 
             for provided_role in provided_roles:
@@ -288,14 +291,12 @@ class ModelGenerator:
         # Create system
         system = self.model_factory.create_system(random_name("system"))
 
-        # Create assembly contexts for random components
+        # Create assembly contexts for all components
         available_components = [c for c in self.components if c.contents]
         if not available_components:
             return system
 
-        # Sebastian: eine Komponente im Repository, die nicht im System instanziiert wird, ist nicht wirklich sinnvoll
-        # Select random components to include in the system
-        # Create assembly contexts for each selected component
+        # Create assembly contexts for each component
         for component in available_components:
             assembly = self.model_factory.create_assembly_context(
                 random_name("assembly"), component
@@ -384,7 +385,7 @@ class ModelGenerator:
         assemblies = [
             content
             for content in system.contents
-            if hasattr(content, "eClass") and content.eClass.name == "AssemblyContext"
+            if isinstance(content, self.model_factory.PCM.AssemblyContext)
         ]
 
         if not assemblies:

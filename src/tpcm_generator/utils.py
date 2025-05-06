@@ -48,17 +48,19 @@ def save_model(model, filename, rset):
     model_resource.save()
     return model_resource
 
+
 def random_name(prefix):
-        """Generate a random name with a given prefix.
+    """Generate a random name with a given prefix.
 
-        Args:
-            prefix: Prefix for the name
+    Args:
+        prefix: Prefix for the name
 
-        Returns:
-            A random name string
-        """
-        suffix = "".join(random.choices(string.ascii_uppercase, k=5))
-        return f"{prefix}_{suffix}"
+    Returns:
+        A random name string
+    """
+    suffix = "".join(random.choices(string.ascii_uppercase, k=8))
+    return f"{prefix}_{suffix}"
+
 
 def convert_to_tpcm(xml_path, tpcm_path):
     """Convert XML model to TPCM format.
@@ -94,120 +96,34 @@ def convert_to_tpcm(xml_path, tpcm_path):
         if e.stderr:
             print(f"Converter error: {e.stderr}")
         return False
-class UniqueRandomInterfaceSampler:
-    """Samples interfaces for components, handling provided and required roles.
 
-    This handles edge cases like having fewer interfaces than requested
-    and ensures valid sampling even with very small numbers of interfaces.
-    """
+
+class UniqueRandomInterfaceSampler:
     def __init__(self, data):
-        self.data = list(data)  # Create a copy to avoid modifying the original
+        self.data = data
+        self.remaining = list(data)
+        self.remaining_provided = list(data)
 
     def sample(self, count_provided, count_required):
-        """Sample interfaces for provided and required roles.
+        if count_provided + count_required > len(self.data):
+            raise ValueError("2 * n cannot be greater than the size of the data set")
 
-        Args:
-            count_provided: Desired number of provided interfaces
-            count_required: Desired number of required interfaces
+        if len(self.remaining_provided) < count_provided:
+            self.remaining_provided = list(self.data)
 
-        Returns:
-            Tuple of (provided_interfaces, required_interfaces)
-        """
-        # Handle empty interfaces case
-        if not self.data:
-            return [], []
+        list_provided = random.sample(self.remaining_provided, count_provided)
+        self.remaining_provided = list(
+            set(self.remaining_provided) - set(list_provided)
+        )
+        self.remaining = list(set(self.remaining) - set(list_provided))
 
-        # Get total available interfaces
-        available = len(self.data)
+        if len(self.remaining) < count_required:
+            self.remaining = list(set(self.data) - set(list_provided))
 
-        # Adjust counts if more requested than available
-        count_provided = min(count_provided, available)
-        count_required = min(count_required, available)
+        list_required = random.sample(self.remaining, count_required)
+        self.remaining = list(set(self.remaining) - set(list_required))
 
-        # Special case: If we only have one interface, use it for both roles
-        if available == 1:
-            return self.data, self.data
-
-        # If total requested interfaces exceeds available,
-        # we need to share some interfaces between provided and required
-        if count_provided + count_required > available:
-            # We'll need some overlap - distribute interfaces proportionally
-            total_requested = count_provided + count_required
-
-            # Calculate how many interfaces need to be shared
-            overlap_count = count_provided + count_required - available
-
-            # First, ensure we have enough for provided interfaces
-            all_interfaces = self.data.copy()
-            random.shuffle(all_interfaces)
-
-            # Split interfaces into three groups:
-            # 1. Provided-only
-            # 2. Shared (both provided and required)
-            # 3. Required-only
-            shared_count = overlap_count
-            provided_only_count = count_provided - shared_count
-            required_only_count = count_required - shared_count
-
-            # Adjust if we have negative values
-            if provided_only_count < 0:
-                shared_count += provided_only_count
-                provided_only_count = 0
-            if required_only_count < 0:
-                shared_count += required_only_count
-                required_only_count = 0
-
-            # Ensure we don't exceed available interfaces
-            total_count = provided_only_count + shared_count + required_only_count
-            if total_count > available:
-                # Scale everything down proportionally
-                scale_factor = available / total_count
-                provided_only_count = max(0, int(provided_only_count * scale_factor))
-                shared_count = max(0, int(shared_count * scale_factor))
-                required_only_count = max(0, int(required_only_count * scale_factor))
-
-                # Handle any remaining interfaces
-                remaining = available - (provided_only_count + shared_count + required_only_count)
-                if remaining > 0:
-                    # Prioritize shared interfaces
-                    shared_count += remaining
-
-            # Create the groups
-            start_idx = 0
-            provided_only = all_interfaces[start_idx:start_idx + provided_only_count]
-            start_idx += provided_only_count
-
-            shared = all_interfaces[start_idx:start_idx + shared_count]
-            start_idx += shared_count
-
-            required_only = all_interfaces[start_idx:start_idx + required_only_count]
-
-            # Create final lists
-            provided_interfaces = provided_only + shared
-            required_interfaces = required_only + shared
-
-            return provided_interfaces, required_interfaces
-        else:
-            # If we have enough interfaces, just randomly select distinct sets
-            all_interfaces = self.data.copy()
-            random.shuffle(all_interfaces)
-
-            provided_interfaces = all_interfaces[:count_provided]
-
-            # For required interfaces, use distinct ones first then reuse if needed
-            remaining = [i for i in all_interfaces if i not in provided_interfaces]
-
-            if len(remaining) >= count_required:
-                # We have enough distinct interfaces
-                required_interfaces = random.sample(remaining, count_required)
-            else:
-                # Need to reuse some provided interfaces
-                required_interfaces = remaining.copy()
-                additional_needed = count_required - len(required_interfaces)
-                additional = random.sample(provided_interfaces, additional_needed)
-                required_interfaces.extend(additional)
-
-            return provided_interfaces, required_interfaces
+        return list_provided, list_required
 
 
 class UniqueRandomSampler:

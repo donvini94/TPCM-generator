@@ -3,11 +3,117 @@
 
 import argparse
 import os
+import random
+import sys
+import multiprocessing
+from multiprocessing import Process, Lock, Queue
 
 # Import from our modules
 from tpcm_generator.model_generator import ModelGenerator
-from tpcm_generator.utils import convert_to_tpcm
+from tpcm_generator.utils import convert_to_tpcm, random_name
 
+
+# Global lock for process-safe printing
+print_lock = Lock()
+
+
+def generate_model_process(model_index, total_models, args_dict, model_name=None):
+    """Process function to generate a single model.
+    
+    Args:
+        model_index: Index of the model to generate (0-based)
+        total_models: Total number of models to generate
+        args_dict: Dictionary with command line arguments
+        model_name: Optional model name, if None a random name will be generated
+    """
+    try:
+        # Use a new seed for each model if a seed is specified
+        current_seed = args_dict.get('seed') + model_index if args_dict.get('seed') is not None else None
+
+        # Generate a unique output name for each model
+        if model_name is None:
+            model_name = f"generated_{random_name('')}"
+
+        # Generate random model parameters for different model shapes
+        param_seed = current_seed + 1000 if current_seed is not None else None
+        param_random = random.Random(param_seed)
+
+        # Generate random parameters within specified max values
+        # Ensure we have at least 2 interfaces for more complex models
+        num_interfaces = (
+            param_random.randint(5, args_dict.get('interfaces', 5)) 
+            if args_dict.get('interfaces', 5) > 1 else 1
+        )
+        # Ensure at least 2 components for more interesting systems
+        num_components = (
+            param_random.randint(2, args_dict.get('components', 10)) 
+            if args_dict.get('components', 10) > 1 else 1
+        )
+        # Ensure at least 1 container
+        num_containers = param_random.randint(1, args_dict.get('containers', 3))
+
+        # Generate other random parameters
+        max_params = param_random.randint(1, args_dict.get('max_params', 3))
+        min_sigs = param_random.randint(1, args_dict.get('min_sigs', 1))
+        max_sigs = param_random.randint(min_sigs, args_dict.get('max_sigs', 5))
+        min_provided = param_random.randint(1, args_dict.get('min_provided', 1))
+        min_required = param_random.randint(1, args_dict.get('min_required', 1))
+
+        # Make sure the generated directory exists
+        os.makedirs("generated", exist_ok=True)
+
+        # Add generated directory prefix to model name and set output file
+        model_name_with_dir = f"generated/{model_name}"
+        output_file = f"{model_name_with_dir}.xml"
+
+        # Print process-safe using a lock
+        with print_lock:
+            print(
+                f"Generating random model {model_index+1}/{total_models} with "
+                f"{num_interfaces} interfaces, {num_components} components, {num_containers} containers, "
+                f"{min_sigs}-{max_sigs} signatures per interface, {max_params} max params..."
+            )
+
+        # Configure model generator with all parameters
+        config = {
+            "max_parameters_per_signature": max_params,
+            "min_signatures_per_interface": min_sigs,
+            "max_signatures_per_interface": max_sigs,
+            "min_provided_interfaces_per_component": min_provided,
+            "min_required_interfaces_per_component": min_required,
+        }
+
+        # Create a fresh model generator instance in each process
+        generator = ModelGenerator(seed=current_seed, **config)
+
+        # Generate all model elements and create the complete model
+        model, model_resource = generator.generate_complete_model(
+            model_name_with_dir,  # Pass the model name with directory prefix
+            num_interfaces=num_interfaces,
+            num_components=num_components,
+        )
+        
+        with print_lock:
+            print(f"Random model generated and saved to {output_file}")
+
+        # Convert to TPCM if requested
+        if args_dict.get('convert', False):
+            # Make sure the input directory exists
+            os.makedirs("input", exist_ok=True)
+
+            # Create TPCM path with just the base model name (no directory prefix)
+            tpcm_path = f"input/{model_name}.tpcm"
+            with print_lock:
+                print(f"Converting {output_file} to TPCM format: {tpcm_path}...")
+            if convert_to_tpcm(output_file, tpcm_path):
+                with print_lock:
+                    print(f"Model converted to TPCM format: {tpcm_path}")
+
+        return True
+    except Exception as e:
+        with print_lock:
+            print(f"Error generating model {model_index}: {e}")
+        return False
 
 
 def main():
@@ -80,150 +186,58 @@ def main():
     parser.add_argument(
         "--models", "-m", type=int, default=1, help="Number of models to generate"
     )
+    parser.add_argument(
+        "--processes", "-p", 
+        type=int, 
+        default=multiprocessing.cpu_count(),
+        help="Number of processes to use (default: number of CPU cores)"
+    )
 
     args = parser.parse_args()
 
-    # Keep track of generated models
-    generated_models = []
+    # Create output directories
+    os.makedirs("generated", exist_ok=True)
+    if args.convert:
+        os.makedirs("input", exist_ok=True)
 
-    # Generate the specified number of models
-    for i in range(args.models):
-        # Use a new seed for each model if a seed is specified
-        current_seed = args.seed + i if args.seed is not None else None
-
-        import random
-        # Generate a unique output name for each model if multiple models
+    # Handle single model case without multiprocessing overhead
+    if args.models == 1:
         model_name = args.output
-        if args.models > 1:
-            # Import utils directly to avoid circular imports
-            from tpcm_generator.utils import random_name
-
-            model_name = f"generated_{random_name('')}"
-
-        # For multiple models, generate random model parameters for different model shapes
-        if args.models > 1:
-            # Set random seed for parameter generation (different from model generation seed)
-            param_seed = current_seed + 1000 if current_seed is not None else None
-            param_random = random.Random(param_seed)
-            
-            # Generate random parameters within specified max values
-            # Ensure we have at least 2 interfaces for more complex models
-            num_interfaces = param_random.randint(2, args.interfaces) if args.interfaces > 1 else 1
-            # Ensure at least 2 components for more interesting systems
-            num_components = param_random.randint(2, args.components) if args.components > 1 else 1
-            # Ensure at least 1 container
-            num_containers = param_random.randint(1, args.containers)
-            
-            # Generate other random parameters
-            max_params = param_random.randint(1, args.max_params)
-            min_sigs = param_random.randint(1, args.min_sigs)
-            max_sigs = param_random.randint(min_sigs, args.max_sigs)
-            min_provided = param_random.randint(1, args.min_provided)
-            min_required = param_random.randint(1, args.min_required)
-        else:
-            # Use command line parameters directly for a single model
-            num_interfaces = args.interfaces
-            num_components = args.components
-            num_containers = args.containers
-            max_params = args.max_params
-            min_sigs = args.min_sigs
-            max_sigs = args.max_sigs
-            min_provided = args.min_provided
-            min_required = args.min_required
-
-        # Make sure the generated directory exists
-        os.makedirs("generated", exist_ok=True)
+        result = generate_model_process(0, 1, vars(args), model_name)
+        return True if result else None
+    else:
+        # Convert args to dictionary for easy passing to processes
+        args_dict = vars(args)
         
-        # Add generated directory prefix to model name and set output file
-        model_name_with_dir = f"generated/{model_name}"
-        output_file = f"{model_name_with_dir}.xml"
+        # Determine number of processes to use (min of processes, models, and cpu_count)
+        num_processes = min(args.processes, args.models, multiprocessing.cpu_count())
         
-        # For multiple models, run each generation in a subprocess to ensure complete isolation
-        if args.models > 1 and i > 0:
-            import sys
-            import subprocess
-            
-            # Build command for subprocess to generate a single model
-            cmd = [
-                sys.executable, 
-                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "main.py"),
-                # Use just the model name without directory prefix - subprocess will add the directory
-                f"--output={model_name}",
-                f"--interfaces={num_interfaces}",
-                f"--components={num_components}",
-                f"--containers={num_containers}",
-                f"--max-params={max_params}",
-                f"--min-sigs={min_sigs}",
-                f"--max-sigs={max_sigs}",
-                f"--min-provided={min_provided}",
-                f"--min-required={min_required}"
-            ]
-            
-            if current_seed is not None:
-                cmd.append(f"--seed={current_seed}")
-                
-            if args.convert:
-                cmd.append("--convert")
-                
-            # Create directories if they don't exist (in case the subprocess needs them)
-            os.makedirs("generated", exist_ok=True)
-            if args.convert:
-                os.makedirs("input", exist_ok=True)
-                
-            print(
-                f"Generating random model {i+1}/{args.models} with "
-                f"{num_interfaces} interfaces, {num_components} components, {num_containers} containers, "
-                f"{min_sigs}-{max_sigs} signatures per interface, {max_params} max params..."
-            )
-            
-            # Run as a separate process
-            result = subprocess.run(cmd, check=True)
-            
-            # Add a placeholder model (actual model file already created by subprocess)
-            generated_models.append(None)
-            continue
-
-        # Create a fresh model generator for each model (to avoid shared state)
-        print(
-            f"Generating random model {i+1}/{args.models} with "
-            f"{num_interfaces} interfaces, {num_components} components, {num_containers} containers, "
-            f"{min_sigs}-{max_sigs} signatures per interface, {max_params} max params..."
-        )
+        print(f"Generating {args.models} models using {num_processes} processes")
         
-        # Configure model generator with all parameters
-        config = {
-            "max_parameters_per_signature": max_params,
-            "min_signatures_per_interface": min_sigs,
-            "max_signatures_per_interface": max_sigs,
-            "min_provided_interfaces_per_component": min_provided,
-            "min_required_interfaces_per_component": min_required
-        }
+        # Create a process pool
+        processes = []
         
-        generator = ModelGenerator(seed=current_seed, **config)
-
-        # Generate all model elements and create the complete model
-        model, model_resource = generator.generate_complete_model(
-            model_name_with_dir,  # Pass the model name with directory prefix
-            num_interfaces=num_interfaces,
-            num_components=num_components
-        )
-        generated_models.append(model)
-        print(f"Random model generated and saved to {output_file}")
-
-        # Convert to TPCM if requested
-        if args.convert:
-            # Make sure the input directory exists
-            os.makedirs("input", exist_ok=True)
+        for i in range(args.models):
+            # Create and start a new process for each model
+            p = Process(target=generate_model_process, args=(i, args.models, args_dict))
+            p.start()
+            processes.append(p)
             
-            # Create TPCM path with just the base model name (no directory prefix)
-            tpcm_path = f"input/{model_name}.tpcm"
-            print(f"Converting {output_file} to TPCM format: {tpcm_path}...")
-            if convert_to_tpcm(output_file, tpcm_path):
-                print(f"Model converted to TPCM format: {tpcm_path}")
-
-    # Return the last generated model for backward compatibility
-    return generated_models[-1] if generated_models else None
+            # Wait for processes to complete before starting new ones if we've reached max
+            if len(processes) >= num_processes:
+                for p in processes:
+                    p.join()
+                # Clear the completed processes
+                processes = []
+        
+        # Wait for any remaining processes to complete
+        for p in processes:
+            p.join()
+            
+        print(f"Successfully generated {args.models} models")
+        return True
 
 
 if __name__ == "__main__":
+    multiprocessing.set_start_method('spawn')  # This helps with PyEcore compatibility
     main()
