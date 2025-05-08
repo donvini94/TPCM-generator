@@ -100,10 +100,10 @@ def convert_to_tpcm(xml_path, tpcm_path):
 
 def convert_to_tpcm_worker(args):
     """Worker function for parallel TPCM conversion.
-    
+
     Args:
         args: Tuple of (xml_path, tpcm_path)
-        
+
     Returns:
         Tuple of (xml_path, tpcm_path, success, error_message)
     """
@@ -112,7 +112,7 @@ def convert_to_tpcm_worker(args):
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     )
     jar_path = os.path.join(base_dir, "SaveAs.jar")
-    
+
     try:
         result = subprocess.run(
             ["java", "-jar", jar_path, xml_path, tpcm_path],
@@ -130,52 +130,74 @@ def convert_to_tpcm_worker(args):
         return (xml_path, tpcm_path, False, error_msg)
 
 
-def convert_multiple_to_tpcm(file_paths, num_processes=None):
+def convert_multiple_to_tpcm(file_paths, num_processes=None, callback=None):
     """Convert multiple XML models to TPCM format in parallel.
-    
+
     Args:
         file_paths: List of tuples, each containing (xml_path, tpcm_path)
         num_processes: Number of parallel processes to use (default: CPU count)
-        
+        callback: Optional callback function to track progress
+
     Returns:
         Dictionary with results for each conversion
     """
     import multiprocessing
     from concurrent.futures import ProcessPoolExecutor
     import time
-    
+
     start_time = time.time()
-    
+
     # Set number of processes
     if num_processes is None:
         num_processes = min(multiprocessing.cpu_count(), len(file_paths))
     else:
         num_processes = min(num_processes, multiprocessing.cpu_count(), len(file_paths))
-    
+
     print(f"Converting {len(file_paths)} files using {num_processes} processes")
-    
+
     results = {}
-    
+
     # Create paths for input directory
     input_dir = os.path.dirname(file_paths[0][1]) if file_paths else "input"
     os.makedirs(input_dir, exist_ok=True)
-    
-    # Process files in parallel using ProcessPoolExecutor
-    with ProcessPoolExecutor(max_workers=num_processes) as executor:
-        for xml_path, tpcm_path, success, message in executor.map(convert_to_tpcm_worker, file_paths):
-            results[xml_path] = {
-                "tpcm_path": tpcm_path,
-                "success": success,
-                "message": message,
-            }
+
+    # Custom worker function that processes the result and calls the callback
+    def process_result(future_result):
+        xml_path, tpcm_path, success, message = future_result
+        result = {
+            "input": xml_path,
+            "tpcm_path": tpcm_path,
+            "success": success,
+            "message": message,
+        }
+        results[xml_path] = result
+
+        # Call the callback if provided
+        if callback:
+            callback(result)
+
+        # Print messages only if no callback (otherwise callback handles progress display)
+        if not callback:
             if success:
                 print(f"Converted {xml_path} to {tpcm_path}")
             else:
                 print(f"Failed to convert {xml_path}: {message}")
-    
+
+    # Process files in parallel using ProcessPoolExecutor with callback
+    with ProcessPoolExecutor(max_workers=num_processes) as executor:
+        futures = []
+        for file_path in file_paths:
+            future = executor.submit(convert_to_tpcm_worker, file_path)
+            future.add_done_callback(lambda f: process_result(f.result()))
+            futures = futures + [future]
+
+        # Wait for all futures to complete
+        for future in futures:
+            future.result()
+
     total_time = time.time() - start_time
     print(f"Total conversion time: {total_time:.2f} seconds")
-    
+
     # Process metadata if available
     metadata_updates = []
     for xml_path, result in results.items():
@@ -183,36 +205,39 @@ def convert_multiple_to_tpcm(file_paths, num_processes=None):
         if os.path.exists(metadata_path):
             try:
                 import json
-                with open(metadata_path, 'r') as f:
+
+                with open(metadata_path, "r") as f:
                     metadata = json.load(f)
-                
+
                 # Update metadata with conversion info
                 metadata["tpcm_conversion"] = {
                     "success": result["success"],
                     "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
                     "xml_path": xml_path,
-                    "tpcm_path": result["tpcm_path"]
+                    "tpcm_path": result["tpcm_path"],
                 }
-                
+
                 # Save updated metadata
-                with open(metadata_path, 'w') as f:
+                with open(metadata_path, "w") as f:
                     json.dump(metadata, f, indent=2)
-                
+
                 # Also copy metadata to the input directory alongside the TPCM file
                 if result["success"]:
-                    tpcm_metadata_path = os.path.splitext(result["tpcm_path"])[0] + ".metadata"
-                    with open(tpcm_metadata_path, 'w') as f:
+                    tpcm_metadata_path = (
+                        os.path.splitext(result["tpcm_path"])[0] + ".metadata"
+                    )
+                    with open(tpcm_metadata_path, "w") as f:
                         json.dump(metadata, f, indent=2)
-                
+
                 metadata_updates.append((metadata_path, result["success"]))
             except Exception as e:
                 print(f"Error updating metadata for {xml_path}: {e}")
-    
+
     # Summary stats
     successful = sum(1 for r in results.values() if r["success"])
     print(f"Successfully converted {successful} out of {len(file_paths)} files")
     print(f"Updated {len(metadata_updates)} metadata files")
-    
+
     return results
 
 

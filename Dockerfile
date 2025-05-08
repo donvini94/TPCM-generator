@@ -9,7 +9,7 @@ RUN	apt-get install -y \
 	--fix-missing \
 	python3 \
 	python3-pip
-RUN	pip3 install pyecore>=0.15.2 textx>=4.1.0
+RUN	pip3 install pyecore>=0.15.2 textx>=4.1.0 tqdm
 COPY	SaveAs.jar	/SaveAs.jar
 COPY	*.py	*.tpcm	*.xtext	tpcm-generator/
 COPY	ecores/	tpcm-generator/ecores/
