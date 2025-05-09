@@ -30,7 +30,7 @@ if [ $TOTAL_FILES -eq 0 ]; then
 fi
 
 # Calculate files per core (at least 1)
-FILES_PER_CORE=$(( (TOTAL_FILES + NUM_CORES - 1) / NUM_CORES ))
+FILES_PER_CORE=$(((TOTAL_FILES + NUM_CORES - 1) / NUM_CORES))
 if [ $FILES_PER_CORE -lt 1 ]; then
   FILES_PER_CORE=1
 fi
@@ -38,24 +38,24 @@ fi
 echo "Each core will process approximately $FILES_PER_CORE files"
 
 # Create task lists for each core
-for ((i=0; i<NUM_CORES; i++)); do
+for ((i = 0; i < NUM_CORES; i++)); do
   START_INDEX=$((i * FILES_PER_CORE))
   if [ $START_INDEX -ge $TOTAL_FILES ]; then
-    break  # No more files to process
+    break # No more files to process
   fi
-  
+
   # Calculate end index (exclusive)
   END_INDEX=$((START_INDEX + FILES_PER_CORE))
   if [ $END_INDEX -gt $TOTAL_FILES ]; then
     END_INDEX=$TOTAL_FILES
   fi
-  
+
   # Create task file for this core
   TASK_FILE="$TEMP_DIR/tpcm_task_$i.txt"
-  for ((j=START_INDEX; j<END_INDEX; j++)); do
-    echo "${TPCM_FILES[$j]}" >> "$TASK_FILE"
+  for ((j = START_INDEX; j < END_INDEX; j++)); do
+    echo "${TPCM_FILES[$j]}" >>"$TASK_FILE"
   done
-  
+
   echo "Core $i will process $((END_INDEX - START_INDEX)) TPCM files"
 done
 
@@ -63,60 +63,60 @@ done
 process_tpcm_files() {
   local task_file=$1
   local core_id=$2
-  
-  echo "[$core_id] Starting tpcm2pcm container to process $(wc -l < "$task_file") files"
-  
+
+  echo "[$core_id] Starting tpcm2pcm container to process $(wc -l <"$task_file") files"
+
   # Create core-specific output directory
   CORE_OUTPUT_DIR="./output/core_$core_id"
   mkdir -p "$CORE_OUTPUT_DIR"
-  
+
   # Create a temporary working directory for this core
   CORE_INPUT_DIR="$TEMP_DIR/input_$core_id"
   mkdir -p "$CORE_INPUT_DIR"
-  
+
   # Copy all TPCM files from the task list to core's input directory
   while IFS= read -r tpcm_file; do
     cp "$tpcm_file" "$CORE_INPUT_DIR/"
-  done < "$task_file"
-  
+  done <"$task_file"
+
   # Generate a unique container name for this core
   TPCM2PCM_NAME="tpcm2pcm-core$core_id-$TIMESTAMP"
-  
+
   # Run the tpcm2pcm container
   echo "[$core_id] Starting tpcm2pcm container ($TPCM2PCM_NAME)..."
-  docker run -v "$CORE_INPUT_DIR":/usr/eclipse/shared \
-           -v "$CORE_OUTPUT_DIR":/usr/eclipse/workspace \
-           --name "$TPCM2PCM_NAME" \
-           registry.dumusstbereitsein.de/tpcm2pcm > "$TEMP_DIR/tpcm2pcm_$core_id.log" 2>&1
-  
+  docker run --user $(id -u):$(id -g) \
+    -v "$CORE_INPUT_DIR":/usr/eclipse/shared \
+    -v "$CORE_OUTPUT_DIR":/usr/eclipse/workspace \
+    --name "$TPCM2PCM_NAME" \
+    registry.dumusstbereitsein.de/tpcm2pcm >"$TEMP_DIR/tpcm2pcm_$core_id.log" 2>&1
   CONTAINER_EXIT_CODE=$?
-  
+
   # Check if the container completed successfully
   if [ $CONTAINER_EXIT_CODE -eq 0 ]; then
     echo "[$core_id] tpcm2pcm container ($TPCM2PCM_NAME) finished successfully."
-    
+
     # Move files from core-specific output to main output
     find "$CORE_OUTPUT_DIR" -type f -name "*.repository" -o -name "*.system" -o -name "*.resourceenvironment" -o -name "*.allocation" -o -name "*.usagemodel" -o -name "*.xmi" | while read -r file; do
       mv "$file" "./output/"
     done
-    
+
   else
     echo "[$core_id] Error: tpcm2pcm container ($TPCM2PCM_NAME) failed with exit code $CONTAINER_EXIT_CODE."
     # Output the log for troubleshooting
     echo "[$core_id] Container log:"
     cat "$TEMP_DIR/tpcm2pcm_$core_id.log"
   fi
-  
+
   # Cleanup container
-  docker rm "$TPCM2PCM_NAME" > /dev/null 2>&1 || true
-  
+  docker rm "$TPCM2PCM_NAME" >/dev/null 2>&1 || true
+
   echo "[$core_id] Completed processing assigned TPCM files"
 }
 
 # Launch tpcm2pcm containers in parallel
 echo "Launching $NUM_CORES parallel tpcm2pcm containers..."
 PIDS=()
-for ((i=0; i<NUM_CORES; i++)); do
+for ((i = 0; i < NUM_CORES; i++)); do
   TASK_FILE="$TEMP_DIR/tpcm_task_$i.txt"
   if [ -f "$TASK_FILE" ]; then
     # Process each task file in a background subprocess
@@ -132,7 +132,7 @@ for pid in "${PIDS[@]}"; do
 done
 
 # Cleanup core-specific output directories
-for ((i=0; i<NUM_CORES; i++)); do
+for ((i = 0; i < NUM_CORES; i++)); do
   rm -rf "./output/core_$i"
 done
 
