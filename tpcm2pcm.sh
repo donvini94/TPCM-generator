@@ -84,18 +84,19 @@ process_tpcm_files() {
 
   # Run the tpcm2pcm container
   echo "[$core_id] Starting tpcm2pcm container ($TPCM2PCM_NAME)..."
-  docker run --user $(id -u):$(id -g) \
-    -v "$CORE_INPUT_DIR":/usr/eclipse/shared \
+
+  docker run -v "$CORE_INPUT_DIR":/usr/eclipse/shared \
     -v "$CORE_OUTPUT_DIR":/usr/eclipse/workspace \
     --name "$TPCM2PCM_NAME" \
     registry.dumusstbereitsein.de/tpcm2pcm >"$TEMP_DIR/tpcm2pcm_$core_id.log" 2>&1
+
   CONTAINER_EXIT_CODE=$?
 
   # Check if the container completed successfully
   if [ $CONTAINER_EXIT_CODE -eq 0 ]; then
     echo "[$core_id] tpcm2pcm container ($TPCM2PCM_NAME) finished successfully."
-
-    # Move files from core-specific output to main output
+    docker exec "$TPCM2PCM_NAME" chmod -R 777 /usr/eclipse/workspace
+    # Copy files from core-specific output to main output
     find "$CORE_OUTPUT_DIR" -type f -name "*.repository" -o -name "*.system" -o -name "*.resourceenvironment" -o -name "*.allocation" -o -name "*.usagemodel" -o -name "*.xmi" | while read -r file; do
       mv "$file" "./output/"
     done
