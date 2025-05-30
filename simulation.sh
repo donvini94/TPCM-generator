@@ -92,18 +92,9 @@ process_task_file() {
               usage_file=$(ls /usr/ExperimentData/model | grep "^usage_.*\.usagemodel$")
               env_file=$(ls /usr/ExperimentData/model | grep "^Environment_.*\.resourceenvironment$")
 
-              echo "Found allocation file: $allocation_file"
-              echo "Found usage file: $usage_file"
-              echo "Found resource environment file: $env_file"
-
               new_allocation_id=$(sed -n "2s/.*id=\"\\([^\"]*\\)\".*/\\1/p" /usr/ExperimentData/model/"$allocation_file")
-              echo "New allocation ID: $new_allocation_id"
-
               new_resource_id=$(sed -n "4s/.*id=\"\\([^\"]*\\)\".*/\\1/p" /usr/ExperimentData/model/"$env_file")
-              echo "New resource ID: $new_resource_id"
-
               new_usage_id=$(sed -n "3s/.*id=\"\\([^\"]*\\)\".*/\\1/p" /usr/ExperimentData/model/"$usage_file")
-              echo "New usage ID: $new_usage_id"
 
               GENERATED="/usr/ExperimentData/model/Experiments/Generated.experiments"
               MEASURINGPOINT="/usr/ExperimentData/model/measuring2.measuringpoint"
@@ -120,12 +111,8 @@ process_task_file() {
 
               # Run the simulation
               /usr/RunExperimentAutomation.sh
-
-              echo "Simulation complete. Results available in /result"
             '
     )
-
-    echo "[$core_id] Launched container: $container_id"
 
     # Wait for the container to finish with timeout
     if ! timeout 60s docker wait "$container_id"; then

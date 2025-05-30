@@ -77,7 +77,6 @@ def convert_to_tpcm(xml_path, tpcm_path):
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     )
     jar_path = os.path.join(base_dir, "SaveAs.jar")
-    print(jar_path)
 
     try:
         result = subprocess.run(
@@ -86,13 +85,9 @@ def convert_to_tpcm(xml_path, tpcm_path):
             capture_output=True,
             text=True,
         )
-        if result.stdout.strip():
-            print(f"Conversion output: {result.stdout}")
         return True
     except subprocess.CalledProcessError as e:
         print(f"Error converting to TPCM: {e}")
-        if e.stdout:
-            print(f"Converter output: {e.stdout}")
         if e.stderr:
             print(f"Converter error: {e.stderr}")
         return False
@@ -176,12 +171,9 @@ def convert_multiple_to_tpcm(file_paths, num_processes=None, callback=None):
         if callback:
             callback(result)
 
-        # Print messages only if no callback (otherwise callback handles progress display)
-        if not callback:
-            if success:
-                print(f"Converted {xml_path} to {tpcm_path}")
-            else:
-                print(f"Failed to convert {xml_path}: {message}")
+        # Only print failure messages (no success messages to reduce overhead)
+        if not callback and not success:
+            print(f"Failed to convert {xml_path}: {message}")
 
     # Process files in parallel using ProcessPoolExecutor with callback
     with ProcessPoolExecutor(max_workers=num_processes) as executor:
@@ -236,7 +228,6 @@ def convert_multiple_to_tpcm(file_paths, num_processes=None, callback=None):
     # Summary stats
     successful = sum(1 for r in results.values() if r["success"])
     print(f"Successfully converted {successful} out of {len(file_paths)} files")
-    print(f"Updated {len(metadata_updates)} metadata files")
 
     return results
 

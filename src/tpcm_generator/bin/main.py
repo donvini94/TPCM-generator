@@ -6,7 +6,9 @@ import os
 import random
 import sys
 import multiprocessing
-from multiprocessing import Process, Lock, Queue
+import threading
+import time
+from multiprocessing import Process, Lock, Queue, Value, Manager
 
 # Import from our modules
 from tpcm_generator.model_generator import ModelGenerator
@@ -17,18 +19,23 @@ from tpcm_generator.utils import convert_to_tpcm, random_name
 print_lock = Lock()
 
 
-def generate_model_process(model_index, total_models, args_dict, model_name=None):
+def generate_model_process(model_index, total_models, args_dict, model_name=None, progress_counter=None):
     """Process function to generate a single model.
-    
+
     Args:
         model_index: Index of the model to generate (0-based)
         total_models: Total number of models to generate
         args_dict: Dictionary with command line arguments
         model_name: Optional model name, if None a random name will be generated
+        progress_counter: Shared counter to track progress
     """
     try:
         # Use a new seed for each model if a seed is specified
-        current_seed = args_dict.get('seed') + model_index if args_dict.get('seed') is not None else None
+        current_seed = (
+            args_dict.get("seed") + model_index
+            if args_dict.get("seed") is not None
+            else None
+        )
 
         # Generate a unique output name for each model
         if model_name is None:
@@ -41,23 +48,25 @@ def generate_model_process(model_index, total_models, args_dict, model_name=None
         # Generate random parameters within specified max values
         # Ensure we have at least 2 interfaces for more complex models
         num_interfaces = (
-            param_random.randint(5, args_dict.get('interfaces', 5)) 
-            if args_dict.get('interfaces', 5) > 1 else 1
+            param_random.randint(5, args_dict.get("interfaces", 5))
+            if args_dict.get("interfaces", 5) > 1
+            else 1
         )
         # Ensure at least 2 components for more interesting systems
         num_components = (
-            param_random.randint(2, args_dict.get('components', 10)) 
-            if args_dict.get('components', 10) > 1 else 1
+            param_random.randint(2, args_dict.get("components", 10))
+            if args_dict.get("components", 10) > 1
+            else 1
         )
         # Ensure at least 1 container
-        num_containers = param_random.randint(1, args_dict.get('containers', 3))
+        num_containers = param_random.randint(1, args_dict.get("containers", 3))
 
         # Generate other random parameters
-        max_params = param_random.randint(1, args_dict.get('max_params', 3))
-        min_sigs = param_random.randint(1, args_dict.get('min_sigs', 1))
-        max_sigs = param_random.randint(min_sigs, args_dict.get('max_sigs', 5))
-        min_provided = param_random.randint(1, args_dict.get('min_provided', 1))
-        min_required = param_random.randint(1, args_dict.get('min_required', 1))
+        max_params = param_random.randint(1, args_dict.get("max_params", 3))
+        min_sigs = param_random.randint(1, args_dict.get("min_sigs", 1))
+        max_sigs = param_random.randint(min_sigs, args_dict.get("max_sigs", 5))
+        min_provided = param_random.randint(1, args_dict.get("min_provided", 1))
+        min_required = param_random.randint(1, args_dict.get("min_required", 1))
 
         # Make sure the generated directory exists
         os.makedirs("generated", exist_ok=True)
@@ -65,14 +74,6 @@ def generate_model_process(model_index, total_models, args_dict, model_name=None
         # Add generated directory prefix to model name and set output file
         model_name_with_dir = f"generated/{model_name}"
         output_file = f"{model_name_with_dir}.xml"
-
-        # Print process-safe using a lock
-        with print_lock:
-            print(
-                f"Generating random model {model_index+1}/{total_models} with "
-                f"{num_interfaces} interfaces, {num_components} components, {num_containers} containers, "
-                f"{min_sigs}-{max_sigs} signatures per interface, {max_params} max params..."
-            )
 
         # Configure model generator with all parameters
         config = {
@@ -93,60 +94,56 @@ def generate_model_process(model_index, total_models, args_dict, model_name=None
             num_components=num_components,
         )
         
-        with print_lock:
-            print(f"Random model generated and saved to {output_file}")
+        # Update progress counter if provided
+        if progress_counter is not None:
+            with progress_counter.get_lock():
+                progress_counter.value += 1
 
         # Convert to TPCM if requested
-        if args_dict.get('convert', False):
+        if args_dict.get("convert", False):
             # Make sure the input directory exists
             os.makedirs("input", exist_ok=True)
 
             # Create TPCM path with just the base model name (no directory prefix)
             tpcm_path = f"input/{model_name}.tpcm"
-            with print_lock:
-                print(f"Converting {output_file} to TPCM format: {tpcm_path}...")
-            
+
             # Try to load the metadata file
             import json
+
             metadata_path = os.path.splitext(output_file)[0] + ".metadata"
-            
+
             try:
                 if os.path.exists(metadata_path):
-                    with open(metadata_path, 'r') as f:
+                    with open(metadata_path, "r") as f:
                         metadata = json.load(f)
-                        
+
                     # Update metadata with TPCM conversion info
                     import time
+
                     conversion_start = time.time()
                     conversion_success = convert_to_tpcm(output_file, tpcm_path)
                     conversion_time = round(time.time() - conversion_start, 3)
-                    
+
                     metadata["tpcm_conversion"] = {
                         "success": conversion_success,
                         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
                         "time_seconds": conversion_time,
                         "xml_path": output_file,
-                        "tpcm_path": tpcm_path
+                        "tpcm_path": tpcm_path,
                     }
-                    
+
                     # Save updated metadata
-                    with open(metadata_path, 'w') as f:
+                    with open(metadata_path, "w") as f:
                         json.dump(metadata, f, indent=2)
-                        
+
                     if conversion_success:
                         # Also copy metadata to the input directory alongside the TPCM file
-                        tpcm_metadata_path = os.path.splitext(tpcm_path)[0] + ".metadata"
-                        with open(tpcm_metadata_path, 'w') as f:
+                        tpcm_metadata_path = (
+                            os.path.splitext(tpcm_path)[0] + ".metadata"
+                        )
+                        with open(tpcm_metadata_path, "w") as f:
                             json.dump(metadata, f, indent=2)
-                        
-                        with print_lock:
-                            print(f"Model converted to TPCM format: {tpcm_path}")
-                            print(f"Metadata saved to: {tpcm_metadata_path}")
-                else:
-                    # If metadata file doesn't exist, just do the conversion
-                    if convert_to_tpcm(output_file, tpcm_path):
-                        with print_lock:
-                            print(f"Model converted to TPCM format: {tpcm_path}")
+
             except Exception as e:
                 # If there's an error handling metadata, still try the conversion
                 with print_lock:
@@ -160,6 +157,56 @@ def generate_model_process(model_index, total_models, args_dict, model_name=None
         with print_lock:
             print(f"Error generating model {model_index}: {e}")
         return False
+
+
+def progress_monitor_thread(progress_counter, total_models, stop_event):
+    """Thread function to display a progress bar.
+    
+    Args:
+        progress_counter: Shared counter tracking completed models
+        total_models: Total number of models to generate
+        stop_event: Event to signal when to stop the progress bar
+    """
+    start_time = time.time()
+    
+    while not stop_event.is_set():
+        # Get current count
+        current = progress_counter.value
+        
+        if current >= total_models:
+            # All models generated, exit thread
+            break
+            
+        # Calculate progress percentage
+        percentage = min(100, int(100 * current / total_models))
+        
+        # Calculate ETA
+        if current > 0:
+            elapsed = time.time() - start_time
+            models_per_sec = current / elapsed
+            remaining_models = total_models - current
+            eta_seconds = remaining_models / models_per_sec if models_per_sec > 0 else 0
+            eta_str = f"ETA: {int(eta_seconds // 60)}m {int(eta_seconds % 60)}s"
+        else:
+            eta_str = "ETA: calculating..."
+        
+        # Create progress bar
+        bar_length = 30
+        filled_length = int(bar_length * current / total_models)
+        bar = '█' * filled_length + '-' * (bar_length - filled_length)
+        
+        # Print progress bar with carriage return
+        with print_lock:
+            sys.stdout.write(f"\rGenerating models: [{bar}] {percentage}% ({current}/{total_models}) {eta_str}")
+            sys.stdout.flush()
+        
+        # Sleep briefly
+        time.sleep(0.5)
+    
+    # Print final progress
+    with print_lock:
+        sys.stdout.write(f"\rGenerating models: [{'█' * bar_length}] 100% ({total_models}/{total_models}) Complete!{' ' * 20}\n")
+        sys.stdout.flush()
 
 
 def main():
@@ -233,10 +280,11 @@ def main():
         "--models", "-m", type=int, default=1, help="Number of models to generate"
     )
     parser.add_argument(
-        "--processes", "-p", 
-        type=int, 
+        "--processes",
+        "-p",
+        type=int,
         default=multiprocessing.cpu_count(),
-        help="Number of processes to use (default: number of CPU cores)"
+        help="Number of processes to use (default: number of CPU cores)",
     )
 
     args = parser.parse_args()
@@ -254,36 +302,57 @@ def main():
     else:
         # Convert args to dictionary for easy passing to processes
         args_dict = vars(args)
-        
+
         # Determine number of processes to use (min of processes, models, and cpu_count)
         num_processes = min(args.processes, args.models, multiprocessing.cpu_count())
-        
+
         print(f"Generating {args.models} models using {num_processes} processes")
         
-        # Create a process pool
-        processes = []
+        # Create shared counter for tracking progress
+        progress_counter = Value('i', 0)
+        stop_event = threading.Event()
         
-        for i in range(args.models):
-            # Create and start a new process for each model
-            p = Process(target=generate_model_process, args=(i, args.models, args_dict))
-            p.start()
-            processes.append(p)
-            
-            # Wait for processes to complete before starting new ones if we've reached max
-            if len(processes) >= num_processes:
-                for p in processes:
-                    p.join()
-                # Clear the completed processes
-                processes = []
-        
-        # Wait for any remaining processes to complete
-        for p in processes:
-            p.join()
-            
+        # Start progress monitor thread
+        progress_thread = threading.Thread(
+            target=progress_monitor_thread, 
+            args=(progress_counter, args.models, stop_event)
+        )
+        progress_thread.daemon = True
+        progress_thread.start()
+
+        try:
+            # Create a process pool
+            processes = []
+
+            for i in range(args.models):
+                # Create and start a new process for each model
+                p = Process(
+                    target=generate_model_process, 
+                    args=(i, args.models, args_dict, None, progress_counter)
+                )
+                p.start()
+                processes.append(p)
+
+                # Wait for processes to complete before starting new ones if we've reached max
+                if len(processes) >= num_processes:
+                    for p in processes:
+                        p.join()
+                    # Clear the completed processes
+                    processes = []
+
+            # Wait for any remaining processes to complete
+            for p in processes:
+                p.join()
+                
+        finally:
+            # Signal the progress thread to stop and wait for it
+            stop_event.set()
+            progress_thread.join()
+
         print(f"Successfully generated {args.models} models")
         return True
 
 
 if __name__ == "__main__":
-    multiprocessing.set_start_method('spawn')  # This helps with PyEcore compatibility
+    multiprocessing.set_start_method("spawn")  # This helps with PyEcore compatibility
     main()
