@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE_DIR="PCMs/"
+BASE_DIR="output/"
 DOCKER_IMAGE="registry.dumusstbereitsein.de/palladio_runtime:latest"
 
 # Get number of available CPU cores

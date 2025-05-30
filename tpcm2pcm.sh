@@ -1,6 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
+cd "$(dirname "$0")"
+
+mkdir -p output
+NUM_CORES=$(nproc)
+# ...
 # Create output directory if it doesn't exist
 mkdir -p output
 
